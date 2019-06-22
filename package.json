@@ -1,0 +1,24 @@
+{
+  "name": "eth-saddle",
+  "version": "0.0.1",
+  "description": "Ethereum Smart Contract Saddle",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/compound-finance/saddle",
+  "author": "Compound Labs, Inc.",
+  "license": "MIT",
+  "dependencies": {
+    "truffle-hdwallet-provider": "^1.0.10",
+    "web3": "1.0.0-beta.55",
+    "yargs": "^13.2.4"
+  },
+  "devDependencies": {
+    "ganache-core": "^2.5.5",
+    "jest": "^24.8.0",
+    "jest-junit": "^6.4.0",
+    "typescript": "^3.5.1"
+  },
+  "bin": {
+    "saddle": "dist/cli.js"
+  }
+}

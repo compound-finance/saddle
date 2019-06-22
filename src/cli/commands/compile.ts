@@ -1,15 +1,19 @@
 import fs from 'fs';
 import util from 'util';
 import {exec} from 'child_process';
+import {loadConfig} from '../../config';
 
 import {info, debug, warn, error} from '../logger';
 
-export async function compile(network: string, verbose: number): Promise<void> {
-  info(`compiling server on ${network}`, verbose);
+export async function compile(verbose: number): Promise<void> {
+  let config = await loadConfig();
 
-  const buildDir = './.build';
+  const buildDir = config.build_dir;
   const outFile = `${buildDir}/contracts.json`;
-  const solc = "solc --combined-json bin,abi --optimize contracts/*.sol";
+  const solc = `${config.solc} --combined-json bin,abi --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
+
+  info(`Compiling contracts ${config.contracts} with ${config.solc} to ${outFile}...`, verbose);
+  debug(`Running \`${solc}\``, verbose)
 
   await util.promisify(fs.mkdir)(buildDir, { recursive: true });
   const { stdout, stderr } = await util.promisify(exec)(solc);
@@ -19,4 +23,6 @@ export async function compile(network: string, verbose: number): Promise<void> {
   }
 
   await util.promisify(fs.writeFile)(outFile, stdout, 'utf8');
+
+  info(`Contracts compiled successfully.`, verbose);
 }

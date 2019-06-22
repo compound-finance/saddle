@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import {Contract} from 'web3-eth-contract';
+import {Contract, SendOptions} from 'web3-eth-contract';
 import * as path from 'path';
 import ganache from 'ganache-core';
 import {readFile, writeFile} from './file';
@@ -33,7 +33,7 @@ async function getContract(network: string, name: string): Promise<ContractBuild
   }
 }
 
-export async function deployContract(web3: Web3, network: string, from: string, name: string, args: any[]): Promise<Contract> {
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
   let contractBuild = await getContract(network, name);
   if (!contractBuild) {
     throw new Error(`Cannot find contract \`${name}\` in build folder.`);
@@ -41,12 +41,14 @@ export async function deployContract(web3: Web3, network: string, from: string, 
 
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
-  return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send({from: from, gas: 2000000});
+  return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send(sendOptions);
 }
 
 export async function saveContract(name: string, contract: Contract, network: string): Promise<void> {
   let file = getBuildFile(`${network}.json`);
   let curr = await readFile(file, {}, JSON.parse);
+
   curr[name] = contract.address;
+
   await writeFile(file, JSON.stringify(curr));
 }

@@ -10,7 +10,7 @@ yargs
   .count('verbose')
   .alias('v', 'verbose')
   .command('compile', 'Compiles all contracts', (yargs) => yargs, (argv) => {
-    compile(argv.network, argv.verbose)
+    compile(argv.verbose)
   })
   .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
     return yargs

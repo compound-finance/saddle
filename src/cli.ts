@@ -3,6 +3,7 @@
 import yargs from 'yargs';
 import {compile} from './cli/commands/compile';
 import {deploy} from './cli/commands/deploy';
+import {init} from './cli/commands/init';
 import {test} from './cli/commands/test';
 
 yargs
@@ -26,6 +27,9 @@ yargs
   })
   .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
     test(argv, argv.verbose);
+  })
+  .command('init', 'Build initial configuration file', (yargs) => yargs, (argv) => {
+    init(argv.verbose);
   })
   .help()
   .alias('help', 'h')

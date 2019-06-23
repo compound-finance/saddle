@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

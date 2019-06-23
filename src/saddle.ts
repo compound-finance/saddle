@@ -7,8 +7,6 @@ export async function getSaddle(network) {
   console.log(`Using network ${network} ${config.web3.currentProvider.host}`);
 
   async function deploy(contract: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
-    console.log(["Deploying", contract, args]);
-
     return deployContract(config.web3, config.network, contract, args, sendOptions);
   }
 

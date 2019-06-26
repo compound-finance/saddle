@@ -1,9 +1,10 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "description": "Ethereum Smart Contract Saddle",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "files": ["dist/**", "saddle.config.js"],
   "repository": "https://github.com/compound-finance/saddle",
   "author": "Compound Labs, Inc.",
   "license": "MIT",

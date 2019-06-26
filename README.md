@@ -56,7 +56,7 @@ contract MyContract {
 Now, you can compile your contract with:
 
 ```bash
-saddle compile
+npx saddle compile
 ```
 
 `saddle compile` will compile your contracts and store the built output in `./build/contracts.json`. This is the raw output of solc compile.
@@ -64,7 +64,7 @@ saddle compile
 After you've compiled, you can deploy your contracts:
 
 ```bash
-saddle deploy -n development
+npx saddle deploy -n development
 ```
 
 This will deploy your comiled contracts to development (for this, you should have [ganache](https://github.com/trufflesuite/ganache) running). For more information on configuring your deployment for rinkeby or mainnet, see the configuration section below.
@@ -76,7 +76,7 @@ After you have deployed, you will also see the contract address listed in `./bui
 Note: before testing, you currently have to compile your contracts. To run your tests, then, run:
 
 ```bash
-saddle compile && saddle test
+npx saddle compile && npx saddle test
 ```
 
 `saddle test` runs your tests. To add tests, create a directory `/tests` and add some simple tests, e.g.

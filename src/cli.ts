@@ -41,4 +41,7 @@ yargs
   })
   .help()
   .alias('help', 'h')
+  .demandCommand()
+  .recommendCommands()
+  .strict()
   .parse();

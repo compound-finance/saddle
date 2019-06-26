@@ -21,7 +21,15 @@ yargs
       });
   }, (argv) => {
     const contract: string = <string>argv.contract; // required
-    const [,...contractArgs] = argv._;
+    const [,...contractArgsRaw] = argv._;
+    const contractArgs = contractArgsRaw.map((arg) => {
+      if (/^\[.*\]$/.test(arg)) {
+        // turn arrays into arrays
+        return arg.substring(1, arg.length-1).split(",");
+      } else {
+        return arg;
+      }
+    });
 
     deploy(argv.network, contract, contractArgs, argv.verbose);
   })

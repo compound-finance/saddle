@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.6",
+  "version": "0.0.9",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -22,7 +22,8 @@
     "typescript": "^3.5.1"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepare" : "tsc"
   },
   "bin": {
     "saddle": "dist/cli.js"

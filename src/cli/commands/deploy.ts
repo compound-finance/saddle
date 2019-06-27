@@ -3,7 +3,7 @@ import {getSaddle} from '../../saddle';
 
 import {info, debug, warn, error} from '../logger';
 
-export async function deploy(network: string, contractName: string, contractArgs: string[], verbose: number): Promise<void> {
+export async function deploy(network: string, contractName: string, contractArgs: (string|string[])[], verbose: number): Promise<void> {
 
   let saddle = await getSaddle(network);
 

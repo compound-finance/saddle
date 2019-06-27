@@ -15,7 +15,7 @@ function getBuildFile(file: string): string {
   return path.join(process.cwd(), '.build', file);
 }
 
-async function getContract(network: string, name: string): Promise<ContractBuild | null> {
+async function getContractBuild(name: string): Promise<ContractBuild> {
   let contracts = await readFile(getBuildFile(BUILD_FILE_NAME), {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
 
@@ -29,16 +29,25 @@ async function getContract(network: string, name: string): Promise<ContractBuild
 
     return <ContractBuild>contractBuild;
   } else {
-    return null;
+    throw new Error(`Cannot find contract \`${name}\` in build folder.`);
   }
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
-  let contractBuild = await getContract(network, name);
-  if (!contractBuild) {
-    throw new Error(`Cannot find contract \`${name}\` in build folder.`);
-  }
+export async function getContract(web3: Web3, name: string): Promise<Contract> {
+  const contractBuild = await getContractBuild(name);
+  const contractAbi = JSON.parse(contractBuild.abi);
+  const contract = new web3.eth.Contract(contractAbi);
+  return contract;
+}
 
+export async function getContractAt(web3: Web3, name: string, address?: string): Promise<Contract> {
+  const contract = await getContract(web3, name);
+  contract.address = address;
+  return contract;
+}
+
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
+  const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
   return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send(sendOptions);

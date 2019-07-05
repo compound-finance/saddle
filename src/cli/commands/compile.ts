@@ -1,7 +1,7 @@
-import fs from 'fs';
-import util from 'util';
+import {promisify} from 'util';
 import {exec} from 'child_process';
 import {loadConfig} from '../../config';
+import {mkdirp, writeFile} from '../../file';
 
 import {info, debug, warn, error} from '../logger';
 
@@ -15,14 +15,14 @@ export async function compile(verbose: number): Promise<void> {
   info(`Compiling contracts ${config.contracts} with ${config.solc} to ${outFile}...`, verbose);
   debug(`Running \`${solc}\``, verbose)
 
-  await util.promisify(fs.mkdir)(buildDir, { recursive: true });
-  const { stdout, stderr } = await util.promisify(exec)(solc);
-  
+  await mkdirp(buildDir);
+  const { stdout, stderr } = await promisify(exec)(solc);
+
   if (stderr) {
     error(stderr, verbose);
   }
 
-  await util.promisify(fs.writeFile)(outFile, stdout, 'utf8');
+  await writeFile(outFile, stdout);
 
   info(`Contracts compiled successfully.`, verbose);
 }

@@ -1,5 +1,5 @@
-import util from 'util';
 import fs from 'fs';
+import os from 'os';
 
 export function arr<T>(v: undefined | T | T[]): T[] {
   if (!v) {
@@ -47,4 +47,21 @@ export function tryNumber(n: string | undefined): number | undefined {
   }
 }
 
-export const readFile = util.promisify(fs.readFile);
+export function resolvePath(path: string, home: string = os.homedir()): string {
+  if (home)
+    return path.replace(/^~(?=$|\/|\\)/, home)
+  return path;
+}
+
+export async function readFile(path: string, options: object | string): Promise<string> {
+  return new Promise(
+    (okay, fail) => {
+      fs.readFile(resolvePath(path), options, (err, data) => {
+        if (err)
+          return fail(err);
+        if (data instanceof Buffer)
+          return okay(data.toString());
+        return okay(data);
+      })
+    });
+}

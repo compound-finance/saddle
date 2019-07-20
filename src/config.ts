@@ -86,6 +86,7 @@ async function fetchProvider(source: ProviderSource): Promise<Provider | undefin
 }
 
 async function fetchAccount(source: AccountSource, provider: Provider): Promise<string | undefined> {
+  // XXX if we are only returning the address how do we sign the transaction?
   if (!source) {
     return undefined;
   } else if ('unlocked' in source) {
@@ -99,7 +100,10 @@ async function fetchAccount(source: AccountSource, provider: Provider): Promise<
     return process.env[source.env];
   } else if ('file' in source) {
     try {
-      return readFile(source.file, 'utf8');
+      let tempWeb3 = new Web3(provider);
+      let privateKey = await readFile(source.file, 'utf8');
+      let account = tempWeb3.eth.accounts.privateKeyToAccount(privateKey);
+      return account.address;
     } catch (e) {
       return undefined;
     }

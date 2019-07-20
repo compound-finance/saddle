@@ -50,7 +50,10 @@ export async function deployContract(web3: Web3, network: string, name: string, 
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
-  return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send(sendOptions);
+  const deployer = await contract.deploy({data: '0x' + contractBuild.bin, arguments: args});
+  // XXX we need to sign, and infura does not accept unsigned txs
+  //  I think this whole flow needs to be restructured?
+  return deployer.send(sendOptions);
 }
 
 export async function saveContract(name: string, contract: Contract, network: string): Promise<void> {

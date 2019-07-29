@@ -5,6 +5,7 @@ import {Contract, SendOptions, CallOptions} from 'web3-eth-contract';
 export async function getSaddle(network) {
   const config = await instantiateConfig(await loadConfig(), network);
   console.log(`Using network ${network} ${config.web3.currentProvider.host}`);
+  console.log('meep')
 
   async function deploy(contract: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
     return deployContract(config.web3, config.network, contract, args, sendOptions);

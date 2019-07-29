@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import {Contract, SendOptions} from 'web3-eth-contract';
+import { Contract, SendOptions } from 'web3-eth-contract';
 import * as path from 'path';
 import ganache from 'ganache-core';
-import {readFile, writeFile} from './file';
+import { readFile, writeFile } from './file';
 
 const BUILD_FILE_NAME = 'contracts.json';
 
@@ -46,13 +46,17 @@ export async function getContractAt(web3: Web3, name: string, address?: string):
   return contract;
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions = {}): Promise<Contract> {
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
-  const deployer = await contract.deploy({data: '0x' + contractBuild.bin, arguments: args});
+  console.log(sendOptions, 'sendoptions')
+  // need to have the actual acocunt here, or use the
+  // web3 where it is alrady unlocked
+  const deployer = await contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
   // XXX we need to sign, and infura does not accept unsigned txs
   //  I think this whole flow needs to be restructured?
+  // console.log(deployer)
   return deployer.send(sendOptions);
 }
 

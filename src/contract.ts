@@ -1,8 +1,8 @@
 import Web3 from 'web3';
-import {Contract, SendOptions} from 'web3-eth-contract';
+import { Contract, SendOptions } from 'web3-eth-contract';
 import * as path from 'path';
 import ganache from 'ganache-core';
-import {readFile, writeFile} from './file';
+import { readFile, writeFile } from './file';
 
 const BUILD_FILE_NAME = 'contracts.json';
 
@@ -46,11 +46,14 @@ export async function getContractAt(web3: Web3, name: string, address?: string):
   return contract;
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions = {}): Promise<Contract> {
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
-  return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send(sendOptions);
+  console.log(sendOptions, 'sendoptions')
+  // account is unlocked and set as default account when passing private key
+  const deployer = await contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
+  return deployer.send(sendOptions);
 }
 
 export async function saveContract(name: string, contract: Contract, network: string): Promise<void> {

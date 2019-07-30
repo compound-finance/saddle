@@ -85,21 +85,29 @@ async function fetchProvider(source: ProviderSource): Promise<Provider | undefin
   }
 }
 
-async function fetchAccount(source: AccountSource, provider: Provider): Promise<string | undefined> {
+async function fetchAccount(source: AccountSource, web3: Web3): Promise<string | undefined> {
   if (!source) {
     return undefined;
   } else if ('unlocked' in source) {
     // We'll actually ping the provider 😬
-    let tempWeb3 = new Web3(provider);
-    let accounts = await tempWeb3.eth.getAccounts();
+    let accounts = await web3.eth.getAccounts();
     let index = Number(source.unlocked);
 
     return accounts[index];
   } else if ('env' in source) {
-    return process.env[source.env];
+    let privateKey = process.env[source.env];
+    if ( privateKey )   {
+      let account = web3.eth.accounts.wallet.add(privateKey);
+      return account.address;
+    } else {
+      return undefined;
+    }
   } else if ('file' in source) {
     try {
-      return readFile(source.file, 'utf8');
+      let privateKey = await readFile(source.file, 'utf8');
+      let account = web3.eth.accounts.wallet.add('0x' + privateKey.trim());
+      console.log(account)
+      return account.address;
     } catch (e) {
       return undefined;
     }
@@ -117,36 +125,39 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
 }
 
 async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config): Promise<{account: string, web3: Web3}> {
-  let provider = await providers.reduce<Promise<string | undefined>>(async (acc, el) => await acc ? await acc : await fetchProvider(el), Promise.resolve(undefined));
-  if (!provider) {
-    throw new Error(`missing valid provider config from ${JSON.stringify(providers)}`);
-  }
+  console.log(providers, 'providers')
+  let provider = await findValidConfig(providers, fetchProvider)
 
-  let account = await arr(accounts).reduce<Promise<string | undefined>>(async (acc, el) => await acc ? await acc : await fetchAccount(el, provider), Promise.resolve(undefined));
-  if (!account) {
-    throw new Error(`missing valid account config from ${JSON.stringify(accounts)}`);
-  }
+  let gas = await findValidConfig(web3Config.gas, fetchNumeric)
 
-  let gas = await arr(web3Config.gas).reduce<Promise<number | undefined>>(async (acc, el) => await acc ? await acc : await fetchNumeric(el), Promise.resolve(undefined));
-  if (!gas) {
-    throw new Error(`missing gas config from ${JSON.stringify(web3Config.gas)}`);
-  }
-
-  let gasPrice = await arr(web3Config.gas_price).reduce<Promise<number | undefined>>(async (acc, el) => await acc ? await acc : await fetchNumeric(el), Promise.resolve(undefined));
-  if (!gasPrice) {
-    throw new Error(`missing gas price config from ${JSON.stringify(web3Config.gas_price)}`);
-  }
+  let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
 
   let options: Web3ModuleOptions = {
     ...web3Config.options,
     defaultGas: gas,
-    defaultGasPrice: gasPrice,
-    defaultAccount: account
+    defaultGasPrice: gasPrice
   };
 
-  // console.log(`Web3 Provider: ${provider.()}, Web3 Options: ${JSON.stringify(options)}`);
+  let web3 = new Web3(provider, undefined, options);
 
-  return {account, web3: new Web3(provider, undefined, options)};
+  let account = await findValidConfig(accounts, async (el) => {
+    return fetchAccount(el, web3);
+  });
+
+  web3.eth.defaultAccount = account;
+  let count = await web3.eth.getTransactionCount(account);
+  console.log(provider)
+  console.log(count, 'yeeeet')
+
+  return {account, web3};
+}
+
+async function findValidConfig(options, fetcher) {
+  let validOption = await arr(options).reduce<Promise<any>>(async (acc, el) => await acc ? await acc : await fetcher(el), Promise.resolve(undefined));
+  if (!validOption) {
+    throw new Error(`missing valid config from ${JSON.stringify(options)}`);
+  }
+  return validOption;
 }
 
 export async function instantiateConfig(config: SaddleConfig, network: string): Promise<NetworkConfig> {

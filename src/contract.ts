@@ -51,12 +51,8 @@ export async function deployContract(web3: Web3, network: string, name: string, 
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
   console.log(sendOptions, 'sendoptions')
-  // need to have the actual acocunt here, or use the
-  // web3 where it is alrady unlocked
+  // account is unlocked and set as default account when passing private key
   const deployer = await contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
-  // XXX we need to sign, and infura does not accept unsigned txs
-  //  I think this whole flow needs to be restructured?
-  // console.log(deployer)
   return deployer.send(sendOptions);
 }
 

@@ -2,6 +2,9 @@
 module.exports = {
   solc: "solc",                                         // Solc command to run
   solc_args: [],                                        // Extra solc args
+  solc_shell_args: {                                    // Args passed to `exec`, see:
+    maxBuffer: 1024 * 5000                              // https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
+  },
   build_dir: ".build",                                  // Directory to place built contracts
   contracts: "contracts/*.sol",                         // Glob to match contract files
   tests: ['**/tests/*.js'],                             // Glob to match test files

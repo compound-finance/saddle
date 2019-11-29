@@ -24,6 +24,7 @@ export interface SaddleNetworkConfig {
 export interface SaddleConfig {
   solc: string
   solc_args: string[]
+  solc_shell_args: object
   build_dir: string
   contracts: string
   tests: string[]
@@ -39,6 +40,7 @@ export interface Web3Config {
 export interface NetworkConfig {
   solc: string
   solc_args: string[]
+  solc_shell_args: object
   build_dir: string
   contracts: string
   tests: string[]
@@ -165,6 +167,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
   return {
     solc: config.solc,
     solc_args: config.solc_args,
+    solc_shell_args: config.solc_shell_args,
     build_dir: config.build_dir,
     contracts: config.contracts,
     tests: config.tests,

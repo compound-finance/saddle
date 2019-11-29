@@ -1,8 +1,11 @@
 import Web3 from 'web3';
 import { Contract, SendOptions } from 'web3-eth-contract';
+import { Web3ModuleOptions } from 'web3-core';
+import { TransactionReceipt } from 'web3-eth';
 import * as path from 'path';
 import ganache from 'ganache-core';
 import { readFile, writeFile } from './file';
+import {ABI} from 'web3-eth-abi';
 
 const BUILD_FILE_NAME = 'contracts.json';
 
@@ -33,6 +36,11 @@ async function getContractBuild(name: string): Promise<ContractBuild> {
   }
 }
 
+export async function getContractABI(name: string): Promise<ABI[]> {
+  const contractBuild = await getContractBuild(name);
+  return JSON.parse(contractBuild.abi);
+}
+
 export async function getContract(web3: Web3, name: string): Promise<Contract> {
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
@@ -46,14 +54,25 @@ export async function getContractAt(web3: Web3, name: string, address?: string):
   return contract;
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], sendOptions: SendOptions = {}): Promise<Contract> {
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], defaultOptions: Web3ModuleOptions, sendOptions: SendOptions = {}): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
-  const contract = new web3.eth.Contract(contractAbi);
-  console.log(sendOptions, 'sendoptions')
-  // account is unlocked and set as default account when passing private key
-  const deployer = await contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
-  return deployer.send(sendOptions);
+  const web3Contract = new web3.eth.Contract(contractAbi, undefined, defaultOptions);
+
+  const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
+  let receiptResolveFn;
+  let receiptPromise = <Promise<TransactionReceipt>>new Promise((resolve, reject) => {
+    receiptResolveFn = resolve;
+  });
+
+  let deployment = deployer.send(sendOptions).on('receipt', (receipt) => {
+    return receiptResolveFn(receipt);
+  });
+
+  return {
+    contract: await deployment,
+    receipt: await receiptPromise
+  };
 }
 
 export async function saveContract(name: string, contract: Contract, network: string): Promise<void> {

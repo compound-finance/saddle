@@ -45,6 +45,7 @@ export interface NetworkConfig {
   network: string
   web3: Web3
   account: string
+  defaultOptions: Web3ModuleOptions
 }
 
 export async function loadConfig(file?: string): Promise<SaddleConfig> {
@@ -71,7 +72,7 @@ async function fetchProvider(source: ProviderSource): Promise<Provider | undefin
   if (!source) {
     return undefined;
   } else if ('ganache' in source) {
-    return ganache.provider(source[ganache]);
+    return ganache.provider(source['ganache']);
   } else if ('env' in source) {
       return maybeProvider(process.env[source.env]);
   } else if ('file' in source) {
@@ -106,7 +107,6 @@ async function fetchAccount(source: AccountSource, web3: Web3): Promise<string |
     try {
       let privateKey = await readFile(source.file, 'utf8');
       let account = web3.eth.accounts.wallet.add('0x' + privateKey.trim());
-      console.log(account)
       return account.address;
     } catch (e) {
       return undefined;
@@ -124,32 +124,25 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config): Promise<{account: string, web3: Web3}> {
-  console.log(providers, 'providers')
+async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions}> {
   let provider = await findValidConfig(providers, fetchProvider)
-
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
-
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
 
-  let options: Web3ModuleOptions = {
-    ...web3Config.options,
-    defaultGas: gas,
-    defaultGasPrice: gasPrice
-  };
-
-  let web3 = new Web3(provider, undefined, options);
+  let web3 = new Web3(provider);
 
   let account = await findValidConfig(accounts, async (el) => {
     return fetchAccount(el, web3);
   });
 
-  web3.eth.defaultAccount = account;
-  let count = await web3.eth.getTransactionCount(account);
-  console.log(provider)
-  console.log(count, 'yeeeet')
+  let defaultOptions: Web3ModuleOptions = {
+    ...web3Config.options,
+    gas,
+    gasPrice,
+    from: account
+  };
 
-  return {account, web3};
+  return {account, web3, defaultOptions};
 }
 
 async function findValidConfig(options, fetcher) {
@@ -167,7 +160,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     throw new Error(`missing network ${network} in config`);
   }
 
-  const {account, web3} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3);
+  const {account, web3, defaultOptions} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3);
 
   return {
     solc: config.solc,
@@ -177,6 +170,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     tests: config.tests,
     network: network,
     web3,
-    account
+    account,
+    defaultOptions
   };
 }

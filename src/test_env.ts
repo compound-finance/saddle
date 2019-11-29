@@ -8,6 +8,7 @@ export default class CustomEnvironment extends NodeEnvironment {
   }
 
   async setup() {
+    let start = new Date();
     let saddle = await getSaddle('test');
     this.global['saddle'] = saddle;
     this.global['web3'] = saddle.web3;
@@ -16,6 +17,7 @@ export default class CustomEnvironment extends NodeEnvironment {
     this.global['deploy'] = saddle.deploy;
     this.global['account'] = saddle.account;
     this.global['accounts'] = saddle.accounts;
+    console.log(`Setup in ${new Date().getTime() - start.getTime()} ms`)
 
     await super.setup();
   }

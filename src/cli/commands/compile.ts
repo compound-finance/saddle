@@ -16,7 +16,7 @@ export async function compile(verbose: number): Promise<void> {
   debug(`Running \`${solc}\``, verbose)
 
   await mkdirp(buildDir);
-  const { stdout, stderr } = await promisify(exec)(solc);
+  const { stdout, stderr } = await promisify(exec)(solc, {maxBuffer: 1024 * 5000});
 
   if (stderr) {
     error(stderr, verbose);

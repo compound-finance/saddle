@@ -65,3 +65,13 @@ export async function readFile(path: string, options: object | string): Promise<
       })
     });
 }
+
+export function describeProvider(provider): string {
+  if (!provider) {
+    return "no provider";
+  } else if (provider && provider.hasOwnProperty('host')) {
+    return provider['host'];
+  } else {
+    return provider.engine.constructor.name;
+  }
+}

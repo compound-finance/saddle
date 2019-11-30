@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import {loadConfig, instantiateConfig, NetworkConfig} from './config';
-import {deployContract, getContractABI} from './contract';
+import {deployContract, getContract, getContractABI, getContractAt} from './contract';
 import {ABI} from 'web3-eth-abi';
 import {Contract, SendOptions, CallOptions} from 'web3-eth-contract';
 import {describeProvider} from './utils';
@@ -10,6 +10,8 @@ export interface Saddle {
   account: string,
   accounts: string[],
   config: NetworkConfig
+  getContract: (contractName: string, sendOptions: SendOptions) => Promise<Contract>
+  getContractAt: (contractName: string, address: string) => Promise<Contract>
   deploy: (contract: string, args: any[], sendOptions: any) => Promise<Contract>
   deployFull: (contract: string, args: any[], sendOptions: any) => Promise<{contract: Contract, receipt: TransactionReceipt}>
   abi: (contract: string) => Promise<ABI[]>
@@ -21,6 +23,19 @@ export interface Saddle {
 export async function getSaddle(network): Promise<Saddle> {
   const config = await instantiateConfig(await loadConfig(), network);
   console.log(`Using network ${network} ${describeProvider(config.web3.currentProvider)}`);
+
+  async function getContractInt(contractName: string, sendOptions: SendOptions={}): Promise<Contract> {
+    let options = {
+      ...config.defaultOptions,
+      ...sendOptions
+    };
+
+    return await getContract(config.web3, contractName, options);
+  }
+
+  async function getContractAtInt(contractName: string, address: string): Promise<Contract> {
+    return await getContractAt(config.web3, contractName, address, config.defaultOptions);
+  }
 
   async function deploy(contractName: string, args: any[], sendOptions: SendOptions={}): Promise<Contract> {
     let options = {
@@ -43,21 +58,33 @@ export async function getSaddle(network): Promise<Saddle> {
   }
 
   async function call(callable, callOptions: CallOptions={}): Promise<any> {
+    // Allow old-style sends for now
+    if (callable.methods && callable.methods[callOptions]) {
+      callable = callable.methods[callOptions].apply(callable, arguments[2]);
+      callOptions = arguments[3];
+    }
+
     let options = {
       ...config.defaultOptions,
       ...callOptions
     };
 
-    return callable.call(callOptions);
+    return callable.call(options);
   }
 
   async function send(sendable, sendOptions: SendOptions={}): Promise<any> {
+    // Allow old-style sends for now
+    if (sendable.methods && sendable.methods[sendOptions]) {
+      sendable = sendable.methods[sendOptions].apply(sendable, arguments[2]);
+      sendOptions = arguments[3];
+    }
+
     let options = {
       ...config.defaultOptions,
       ...sendOptions
     };
 
-    return sendable.send(sendOptions);
+    return sendable.send(options);
   }
 
   async function abi(contract: string): Promise<ABI[]> {
@@ -73,6 +100,8 @@ export async function getSaddle(network): Promise<Saddle> {
     abi: abi,
     web3: config.web3,
     send: send,
-    call: call
+    call: call,
+    getContract: getContractInt,
+    getContractAt: getContractAtInt
   };
 }

@@ -41,16 +41,16 @@ export async function getContractABI(name: string): Promise<ABI[]> {
   return JSON.parse(contractBuild.abi);
 }
 
-export async function getContract(web3: Web3, name: string): Promise<Contract> {
+export async function getContract(web3: Web3, name: string, defaultOptions: Web3ModuleOptions): Promise<Contract> {
   const contractBuild = await getContractBuild(name);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
   return contract;
 }
 
-export async function getContractAt(web3: Web3, name: string, address?: string): Promise<Contract> {
-  const contract = await getContract(web3, name);
-  contract.address = address;
+export async function getContractAt(web3: Web3, name: string, address: string, defaultOptions: Web3ModuleOptions): Promise<Contract> {
+  const contract = await getContract(web3, name, defaultOptions);
+  contract._address = address;
   return contract;
 }
 

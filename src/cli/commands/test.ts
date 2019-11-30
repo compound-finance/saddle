@@ -18,9 +18,13 @@ export async function test(argv: yargs.Arguments, verbose: number): Promise<void
   const testArgs = argv._[0] == 'test' ? argv._.slice(1) : argv._;
   const testPats = testArgs.map(a => `**/${a}`);
 
-  await jest.runCLI({
+  const res = await jest.runCLI({
     testMatch: testPats.length ? testPats : config.tests,
     testEnvironment: path.join(__dirname, '..', '..', 'test_env.js'),
     ...jestArgv
   }, [process.cwd()]);
+
+  if (!res.results.success) {
+    process.exit(1);
+  }
 }

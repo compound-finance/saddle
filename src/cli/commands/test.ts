@@ -25,6 +25,8 @@ export async function test(argv: yargs.Arguments, verbose: number): Promise<void
   }, [process.cwd()]);
 
   if (!res.results.success) {
-    process.exit(1);
+    (<any>process.once)("drain", () => {
+      process.exit(1);
+    });
   }
 }

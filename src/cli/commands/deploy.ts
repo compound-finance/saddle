@@ -6,13 +6,13 @@ import {getSaddle} from '../../saddle';
 import {info, debug, warn, error} from '../logger';
 import {describeProvider} from '../../utils';
 
-export async function deploy(network: string, contractName: string, contractArgs: (string|string[])[], verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+export async function deploy(network: string, contractName: string, contractArgs: (string|string[])[], coverage: boolean, verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   let saddle = await getSaddle(network);
 
   info(`Using network ${network} ${describeProvider(saddle.web3.currentProvider)}`, verbose);
   info(`Deploying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
-  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, undefined, {from: saddle.account});
+  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, coverage, undefined, {from: saddle.account});
 
   await saveContract(contractName, contract, network);
 

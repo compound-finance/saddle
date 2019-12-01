@@ -4,6 +4,10 @@ import path from 'path';
 import ganache from 'ganache-core';
 import {arr, mergeDeep, tryNumber, readFile} from './utils';
 import {debug} from './cli/logger';
+import ProviderEngine from 'web3-provider-engine';
+import { CoverageSubprovider } from '@0x/sol-coverage';
+import { SaddleArtifactAdapter } from './saddle_artifact_adapter';
+const RpcSubprovider = require('web3-provider-engine/subproviders/rpc.js')
 
 type NumericSource = { env: string } | { default: string }
 type ProviderSource = { env: string } | { file: string } | { http: string } | { ganache: object }
@@ -29,6 +33,7 @@ export interface SaddleConfig {
   contracts: string
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
+  coverage: boolean
 }
 
 export interface Web3Config {
@@ -48,9 +53,11 @@ export interface NetworkConfig {
   web3: Web3
   account: string
   defaultOptions: Web3ModuleOptions
+  cov: CoverageSubprovider | undefined
+  providerEngine: ProviderEngine | undefined
 }
 
-export async function loadConfig(file?: string): Promise<SaddleConfig> {
+export async function loadConfig(file?: string, coverage?: boolean): Promise<SaddleConfig> {
   let customJson = {};
 
   try {
@@ -62,6 +69,7 @@ export async function loadConfig(file?: string): Promise<SaddleConfig> {
   }
 
   const defaultJson = require(path.join(__dirname, '..', 'saddle.config.js'));
+  defaultJson.coverage = coverage || false;
 
   return mergeDeep(defaultJson, customJson);
 }
@@ -126,12 +134,24 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions}> {
+async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, coverage: boolean): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
   let provider = await findValidConfig(providers, fetchProvider)
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
 
-  let web3 = new Web3(provider);
+  let web3, coverageSubprovider, providerEngine;
+  // XXXS TODO: make this nicer, obviously
+  if (coverage) {
+    const artifactAdapter = new SaddleArtifactAdapter('./.build', 'coverage-contracts.json');
+    coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
+    providerEngine = new ProviderEngine();
+    web3 = new Web3(<any>providerEngine);
+    providerEngine.addProvider(coverageSubprovider);
+    providerEngine.addProvider(new RpcSubprovider({rpcUrl: "http://127.0.0.1:8545"}));
+    providerEngine.start();
+  } else {
+    web3 = new Web3(provider);
+  }
 
   let account = await findValidConfig(accounts, async (el) => {
     return fetchAccount(el, web3);
@@ -144,7 +164,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
     from: account
   };
 
-  return {account, web3, defaultOptions};
+  return {account, web3, defaultOptions, cov: coverageSubprovider, providerEngine};
 }
 
 async function findValidConfig(options, fetcher) {
@@ -162,7 +182,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     throw new Error(`missing network ${network} in config`);
   }
 
-  const {account, web3, defaultOptions} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3);
+  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, config.coverage);
 
   return {
     solc: config.solc,
@@ -174,6 +194,8 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     network: network,
     web3,
     account,
-    defaultOptions
+    defaultOptions,
+    cov,
+    providerEngine
   };
 }

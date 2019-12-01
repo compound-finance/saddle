@@ -7,11 +7,15 @@ import {loadConfig} from '../../config';
 
 import {info, debug, warn, error} from '../logger';
 
-export async function test(argv: yargs.Arguments, verbose: number): Promise<void> {
-  info(`Saddle: running contract tests with jest...\n`, verbose);
+export async function test(argv: yargs.Arguments, coverage: boolean, verbose: number): Promise<void> {
+  info(`Saddle: running contract ${coverage ? 'tests' : 'coverage'} with jest...\n`, verbose);
 
   // Parse the saddle config
   const config = await loadConfig();
+
+  if (argv._[0] == 'coverage') {
+    argv._[0] = 'test';
+  }
 
   // Parse command line args, possibly override testMatch based on remaining argv
   const jestArgv = buildArgv(argv._);
@@ -21,6 +25,7 @@ export async function test(argv: yargs.Arguments, verbose: number): Promise<void
   const res = await jest.runCLI({
     testMatch: testPats.length ? testPats : config.tests,
     testEnvironment: path.join(__dirname, '..', '..', 'test_env.js'),
+    testEnvironmentOptions: { coverage: coverage.toString() },
     ...jestArgv
   }, [process.cwd()]);
 

@@ -72,6 +72,6 @@ export function describeProvider(provider): string {
   } else if (provider && provider.hasOwnProperty('host')) {
     return provider['host'];
   } else {
-    return provider.engine.constructor.name;
+    return provider.engine ? provider.engine.constructor.name : 'unknown provider';
   }
 }

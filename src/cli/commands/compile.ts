@@ -5,12 +5,19 @@ import {mkdirp, writeFile} from '../../file';
 
 import {info, debug, warn, error} from '../logger';
 
-export async function compile(verbose: number): Promise<void> {
+export async function compile(coverage: boolean, verbose: number): Promise<void> {
   let config = await loadConfig();
 
   const buildDir = config.build_dir;
-  const outFile = `${buildDir}/contracts.json`;
-  const solc = `${config.solc} --combined-json bin,abi --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
+  let outFile, solc;
+
+  if (!coverage) {
+    outFile = `${buildDir}/contracts.json`;
+    solc = `${config.solc} --combined-json bin,abi --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
+  } else {
+    outFile = `${buildDir}/coverage-contracts.json`;
+    solc = `${config.solc} --combined-json bin,bin-runtime,abi,metadata,asm,srcmap,srcmap-runtime --metadata-literal --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
+  }
 
   info(`Compiling contracts ${config.contracts} with ${config.solc} to ${outFile}...`, verbose);
   debug(`Running \`${solc}\``, verbose)

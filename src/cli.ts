@@ -12,8 +12,15 @@ if (require.main === module) {
     .option('network', {alias: 'n', description: 'Chosen network', type: 'string', default: 'development'})
     .count('verbose')
     .alias('v', 'verbose')
-    .command('compile', 'Compiles all contracts', (yargs) => yargs, (argv) => {
-      compile(argv.verbose)
+    .command('compile', 'Compiles all contracts', (yargs) => {
+      return yargs
+        .option('coverage', {
+          describe: 'Build contracts for coverage',
+          type: 'boolean',
+          default: false
+        });
+    }, (argv) => {
+      compile(argv.coverage, argv.verbose)
     })
     .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs
@@ -33,10 +40,13 @@ if (require.main === module) {
         }
       });
 
-      deploy(argv.network, contract, contractArgs, argv.verbose);
+      deploy(argv.network, contract, contractArgs, false, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
-      test(argv, argv.verbose);
+      test(argv, false, argv.verbose);
+    })
+    .command('coverage', 'Run contract coverage tests', (yargs) => yargs, (argv) => {
+      test(argv, true, argv.verbose);
     })
     .command('init', 'Build initial configuration file', (yargs) => yargs, (argv) => {
       init(argv.verbose);

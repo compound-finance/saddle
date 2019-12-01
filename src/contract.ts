@@ -20,7 +20,7 @@ function getBuildFile(file: string): string {
 }
 
 async function getContractBuild(name: string, coverage: boolean): Promise<ContractBuild> {
-  let contracts = await readFile(getBuildFile(coverage ? BUILD_FILE_NAME : COVERAGE_FILE_NAME), {}, JSON.parse);
+  let contracts = await readFile(getBuildFile(coverage ? COVERAGE_FILE_NAME : BUILD_FILE_NAME), {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
 
   let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {

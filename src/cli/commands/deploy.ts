@@ -17,7 +17,7 @@ export async function deploy(network: string, contractName: string, contractArgs
   await saveContract(contractName, contract, network);
 
   info(`Deployed ${contractName} at ${contract.address}`, verbose);
-  info(`\nNote: see ${saddle.config.build_dir}/${network}.json for deployed contract addresses`, verbose);
+  info(`\nNote: see ${saddle.network_config.build_dir}/${network}.json for deployed contract addresses`, verbose);
 
   return {contract, receipt};
 }

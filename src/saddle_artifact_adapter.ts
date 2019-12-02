@@ -33,17 +33,27 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
     const contractsFile = `${this._buildDir}/${this._contractsFile}`;
     const contracts: {string: object} = JSON.parse(await promisify(fs.readFile)(contractsFile, 'utf8'))['contracts'];
 
-    let {res} = Object.entries(contracts).reduce(({sourceIndex, res}, [contractName, contract]) => {
+    let {sourceIndex} = Object.entries(contracts).reduce(({i, sourceIndex}, [contractName, contract]) => {
+      if (contract['srcmap'] === '') {
+        return {i, sourceIndex};
+      } else {
+        return {
+          i: i + 1,
+          sourceIndex: {
+            ...sourceIndex,
+            [contractName.split(':')[0]]: i + 1
+          }
+        };
+      }
+    }, {i: 0, sourceIndex: {}});
+
+    return Object.entries(contracts).reduce((res, [contractName, contract]) => {
       let metadata = JSON.parse(contract['metadata']);
-      let [newSourceIndex, sources, sourceCodes] = 
-        Object.entries(metadata['sources']).reduce(([idx, sources, sourceCodes], [path, source]) => {
-          let i = idx[path] || Object.keys(idx).length;
+      let [sources, sourceCodes] =
+        Object.entries(metadata['sources']).reduce(([sources, sourceCodes], [path, source]) => {
+          let i = sourceIndex[path];
 
           return [
-            {
-              ...idx,
-              [path]: i
-            },
             {
               ...sources,
               [i]: path
@@ -53,7 +63,7 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
               [i]: (<any>source)['content']
             }
           ]
-        }, [sourceIndex, {}, {}]);
+        }, [{}, {}]);
 
       const contractData = {
         name: contractName.split(':')[0],
@@ -67,21 +77,13 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
 
       const isInterfaceContract = contractData.bytecode === '0x' && contractData.runtimeBytecode === '0x';
       if (isInterfaceContract) {
-        return {
-          sourceIndex: newSourceIndex,
-          res
-        };
+        return res;
       } else {
-        return {
-          sourceIndex: newSourceIndex,
-          res: [
-            ...res,
-            contractData
-          ]
-        };
+        return [
+          ...res,
+          contractData
+        ];
       }
-    }, <{res: any[], sourceIndex: object}>{sourceIndex: {}, res: []});
-
-    return res;
+    }, <any[]>[]);
   }
 }

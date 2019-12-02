@@ -1,13 +1,17 @@
 import NodeEnvironment from 'jest-environment-node';
 import expect from 'expect';
 import {getSaddle} from './saddle';
+import {writeCoverage} from './coverage';
+import * as path from 'path';
 
 export default class CustomEnvironment extends NodeEnvironment {
   private web3;
   private coverage;
+  private testName;
 
-  constructor(config) {
+  constructor(config, context) {
     super(config);
+    this.testName = path.relative(process.cwd(), context.testPath).split(path.sep).join('-').replace('.', '_');
     this.coverage = config.testEnvironmentOptions['coverage'] === 'true';
   }
 
@@ -28,8 +32,9 @@ export default class CustomEnvironment extends NodeEnvironment {
 
   async teardown() {
     if (this.coverage) {
-      await this.global['saddle'].config.providerEngine.stop();
-      await this.global['saddle'].config.cov.writeCoverageAsync();
+      await this.global['saddle'].network_config.providerEngine.stop();
+      let coverage = this.global['saddle'].network_config.cov._coverageCollector._collector.getFinalCoverage();
+      await writeCoverage(this.global['saddle'].saddle_config, this.testName, coverage);
     }
 
     await super.teardown();

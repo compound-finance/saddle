@@ -6,6 +6,7 @@ import {arr, mergeDeep, tryNumber, readFile} from './utils';
 import {debug} from './cli/logger';
 import ProviderEngine from 'web3-provider-engine';
 import { CoverageSubprovider } from '@0x/sol-coverage';
+import { GanacheSubprovider } from '@0x/subproviders';
 import { SaddleArtifactAdapter } from './saddle_artifact_adapter';
 const RpcSubprovider = require('web3-provider-engine/subproviders/rpc.js')
 
@@ -30,6 +31,7 @@ export interface SaddleConfig {
   solc_args: string[]
   solc_shell_args: object
   build_dir: string
+  coverage_dir: string
   contracts: string
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
@@ -47,6 +49,7 @@ export interface NetworkConfig {
   solc_args: string[]
   solc_shell_args: object
   build_dir: string
+  coverage_dir: string,
   contracts: string
   tests: string[]
   network: string
@@ -142,12 +145,19 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
   let web3, coverageSubprovider, providerEngine;
   // XXXS TODO: make this nicer, obviously
   if (coverage) {
+    let ganacheConfig = providers.reduce((config, el) => {
+      if (el['ganache']) {
+        return el['ganache'];
+      } else {
+        return config;
+      }
+    }, {});
     const artifactAdapter = new SaddleArtifactAdapter('./.build', 'coverage-contracts.json');
     coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
     providerEngine = new ProviderEngine();
     web3 = new Web3(<any>providerEngine);
     providerEngine.addProvider(coverageSubprovider);
-    providerEngine.addProvider(new RpcSubprovider({rpcUrl: "http://127.0.0.1:8545"}));
+    providerEngine.addProvider(new GanacheSubprovider(ganacheConfig)); // TODO: Pass args?
     providerEngine.start();
   } else {
     web3 = new Web3(provider);
@@ -189,6 +199,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     solc_args: config.solc_args,
     solc_shell_args: config.solc_shell_args,
     build_dir: config.build_dir,
+    coverage_dir: config.coverage_dir,
     contracts: config.contracts,
     tests: config.tests,
     network: network,

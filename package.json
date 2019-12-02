@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -12,7 +12,7 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "@0x/sol-compiler": "^3.1.15",
+    "@0x/sol-coverage": "^4.0.0",
     "@0x/sol-trace": "^2.0.20",
     "@0x/subproviders": "^6.0.0",
     "truffle-hdwallet-provider": "^1.0.10",
@@ -21,7 +21,6 @@
     "yargs": "^13.2.4"
   },
   "devDependencies": {
-    "@0x/sol-coverage": "^3.0.12",
     "@types/jest": "^24.0.15",
     "ganache-core": "^2.5.6",
     "jest": "^24.9.0",

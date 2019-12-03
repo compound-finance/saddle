@@ -157,6 +157,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
     const artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'coverage-contracts.json', config.coverage_ignore);
     coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
     providerEngine = new ProviderEngine();
+    providerEngine.send = providerEngine.sendAsync;
     web3 = new Web3(<any>providerEngine);
     providerEngine.addProvider(coverageSubprovider);
     providerEngine.addProvider(new GanacheSubprovider(ganacheConfig)); // TODO: Pass args?

@@ -319,24 +319,24 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
-"@compound-finance/sol-coverage@^4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@compound-finance/sol-coverage/-/sol-coverage-4.0.1.tgz#a70d1de3d9d9c46289565685856198404391d811"
-  integrity sha512-kW1ZvztbhveCIwL+PxI3jL/x7Q4rGraFYjpK7jNf2jUKNqn87vZahlmZgsvgU4ax078QCacO13wAPlXV2KSsQw==
+"@compound-finance/sol-coverage@^4.0.0-r1":
+  version "4.0.0-r1"
+  resolved "https://registry.yarnpkg.com/@compound-finance/sol-coverage/-/sol-coverage-4.0.0-r1.tgz#d887f875f6ad0a8675fccf30357546a7bc17b2aa"
+  integrity sha512-vs7dEx6AaufsqhRECf0CLCCsR5xsKKbJKlM/RQzksBSAo9EpC6+7aEquhTfCIsTz176IjzTQmPhdDLn7/nEHsg==
   dependencies:
     "@0x/subproviders" "^6.0.0"
     "@0x/typescript-typings" "^5.0.0"
-    "@compound-finance/sol-tracing-utils" "^7.0.0"
+    "@compound-finance/sol-tracing-utils" "^7.0.0-r1"
     "@types/minimatch" "^3.0.3"
     ethereum-types "^3.0.0"
     lodash "^4.17.11"
     minimatch "^3.0.4"
     web3-provider-engine "14.0.6"
 
-"@compound-finance/sol-tracing-utils@^7.0.0":
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/@compound-finance/sol-tracing-utils/-/sol-tracing-utils-7.0.0.tgz#de58229e819afa8ce38d86a24959bd43d6aab413"
-  integrity sha512-l5XdTb5lcaRlpqMwGxwnLsSwzM5CYZFvvtnakwwuH0LO8Xwe9i6jloMjiFrjLH9nh7aneRa+Wrh/doQ/M8+Gzw==
+"@compound-finance/sol-tracing-utils@^7.0.0-r1":
+  version "7.0.0-r1"
+  resolved "https://registry.yarnpkg.com/@compound-finance/sol-tracing-utils/-/sol-tracing-utils-7.0.0-r1.tgz#61c16f2a967cd4e51feba2d1f5efd2c9a2dc1df8"
+  integrity sha512-NJu62xUMU64tsNUavZjtyMnIjRfdm39JHpbiDfz3I+F8UoDwnLr5qbMZlDZXqgukuGkRS7aVJ3PXZqYnjtP1Ag==
   dependencies:
     "@0x/dev-utils" "^3.0.0"
     "@0x/sol-compiler" "^4.0.0"

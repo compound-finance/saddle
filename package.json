@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@0x/subproviders": "^6.0.0",
-    "@compound-finance/sol-coverage": "^4.0.1",
+    "@compound-finance/sol-coverage": "^4.0.0-r1",
     "truffle-hdwallet-provider": "^1.0.10",
     "web3": "^1.2.4",
     "web3-provider-engine": "^15.0.4",

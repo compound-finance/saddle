@@ -5,7 +5,7 @@ import ganache from 'ganache-core';
 import {arr, mergeDeep, tryNumber, readFile} from './utils';
 import {debug} from './cli/logger';
 import ProviderEngine from 'web3-provider-engine';
-import { CoverageSubprovider } from '@0x/sol-coverage';
+import { CoverageSubprovider } from '@compound-finance/sol-coverage';
 import { GanacheSubprovider } from '@0x/subproviders';
 import { SaddleArtifactAdapter } from './saddle_artifact_adapter';
 const RpcSubprovider = require('web3-provider-engine/subproviders/rpc.js')
@@ -32,6 +32,7 @@ export interface SaddleConfig {
   solc_shell_args: object
   build_dir: string
   coverage_dir: string
+  coverage_ignore: string[]
   contracts: string
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
@@ -49,7 +50,8 @@ export interface NetworkConfig {
   solc_args: string[]
   solc_shell_args: object
   build_dir: string
-  coverage_dir: string,
+  coverage_dir: string
+  coverage_ignore: string[]
   contracts: string
   tests: string[]
   network: string
@@ -137,14 +139,14 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, coverage: boolean): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
+async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
   let provider = await findValidConfig(providers, fetchProvider)
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
 
   let web3, coverageSubprovider, providerEngine;
   // XXXS TODO: make this nicer, obviously
-  if (coverage) {
+  if (config.coverage) {
     let ganacheConfig = providers.reduce((config, el) => {
       if (el['ganache']) {
         return el['ganache'];
@@ -152,7 +154,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
         return config;
       }
     }, {});
-    const artifactAdapter = new SaddleArtifactAdapter('./.build', 'coverage-contracts.json');
+    const artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'coverage-contracts.json', config.coverage_ignore);
     coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
     providerEngine = new ProviderEngine();
     web3 = new Web3(<any>providerEngine);
@@ -192,7 +194,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     throw new Error(`missing network ${network} in config`);
   }
 
-  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, config.coverage);
+  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, config);
 
   return {
     solc: config.solc,
@@ -200,6 +202,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     solc_shell_args: config.solc_shell_args,
     build_dir: config.build_dir,
     coverage_dir: config.coverage_dir,
+    coverage_ignore: config.coverage_ignore,
     contracts: config.contracts,
     tests: config.tests,
     network: network,

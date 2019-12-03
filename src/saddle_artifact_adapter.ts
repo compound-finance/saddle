@@ -9,13 +9,14 @@ import {promisify} from 'util';
 
 // import { ContractData, SourceCodes, Sources } from '../types';
 
-import { AbstractArtifactAdapter } from '@0x/sol-coverage';
+import { AbstractArtifactAdapter } from '@compound-finance/sol-coverage';
 
 // const CONFIG_FILE = 'compiler.json';
 
 export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
   private readonly _buildDir: string;
   private readonly _contractsFile: string;
+  private readonly _coverageIgnore: string[];
   // private readonly _sourcesPath: string;
   // private readonly _resolver: FallthroughResolver;
   /**
@@ -23,10 +24,11 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
    * @param artifactsPath Path to your artifacts directory
    * @param sourcesPath Path to your contract sources directory
    */
-  constructor(buildDir: string, contractsFile: string) {
+  constructor(buildDir: string, contractsFile: string, coverageIgnore: string[]) {
     super();
     this._buildDir = buildDir;
     this._contractsFile = contractsFile;
+    this._coverageIgnore = coverageIgnore;
   }
 
   public async collectContractsDataAsync() {
@@ -76,7 +78,9 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
       };
 
       const isInterfaceContract = contractData.bytecode === '0x' && contractData.runtimeBytecode === '0x';
-      if (isInterfaceContract) {
+      const isIgnored = this._coverageIgnore.includes(contractData.name);
+
+      if (isInterfaceContract || isIgnored) {
         return res;
       } else {
         return [

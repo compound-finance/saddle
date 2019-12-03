@@ -8,7 +8,7 @@ import {loadConfig} from '../../config';
 import {info, debug, warn, error} from '../logger';
 
 export async function test(argv: yargs.Arguments, coverage: boolean, verbose: number): Promise<void> {
-  info(`Saddle: running contract ${coverage ? 'tests' : 'coverage'} with jest...\n`, verbose);
+  info(`Saddle: running contract ${coverage ? 'coverage' : 'tests'} with jest...\n`, verbose);
 
   // Parse the saddle config
   const config = await loadConfig();

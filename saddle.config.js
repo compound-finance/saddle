@@ -7,6 +7,7 @@ module.exports = {
   },
   build_dir: ".build",                                  // Directory to place built contracts
   coverage_dir: "coverage",                             // Directory to place coverage files
+  coverage_ignore: [],                                  // List of files to ignore for coverage
   contracts: "contracts/*.sol",                         // Glob to match contract files
   tests: ['**/tests/*.js'],                             // Glob to match test files
   networks: {                                           // Define configuration for each network

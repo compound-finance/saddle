@@ -14,7 +14,7 @@ export interface Saddle {
   getContract: (contractName: string, sendOptions: SendOptions) => Promise<Contract>
   getContractAt: (contractName: string, address: string) => Promise<Contract>
   deploy: (contract: string, args: any[], sendOptions: any) => Promise<Contract>
-  deployFull: (contract: string, args: any[], sendOptions: any) => Promise<{contract: Contract, receipt: TransactionReceipt}>
+  deployFull: (contract: string, args: any[], sendOptions: any, web3?: Web3 | undefined) => Promise<{contract: Contract, receipt: TransactionReceipt}>
   abi: (contract: string) => Promise<ABIItem[]>
   web3: Web3
   send: (sendable: any, sendOptions?: any) => Promise<any>
@@ -50,13 +50,13 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
     return contract;
   }
 
-  async function deployFull(contractName: string, args: any[], sendOptions: SendOptions={}): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+  async function deployFull(contractName: string, args: any[], sendOptions: SendOptions={}, web3?: Web3 | undefined): Promise<{contract: Contract, receipt: TransactionReceipt}> {
     let options = {
       ...network_config.defaultOptions,
       ...sendOptions
     };
 
-    return await deployContract(network_config.web3, network_config.network, contractName, args, saddle_config.coverage, network_config.defaultOptions, options);
+    return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, saddle_config.coverage, network_config.defaultOptions, options);
   }
 
   async function call(callable, callOptions: CallOptions={}): Promise<any> {

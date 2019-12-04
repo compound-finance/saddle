@@ -22,6 +22,8 @@ export async function test(argv: yargs.Arguments, coverage: boolean, verbose: nu
   const testArgs = argv._[0] == 'test' ? argv._.slice(1) : argv._;
   const testPats = testArgs.map(a => `**/${a}`);
 
+  info(`Jest args: ${JSON.stringify(jestArgv)}`, verbose);
+
   const res = await jest.runCLI({
     testMatch: testPats.length ? testPats : config.tests,
     testEnvironment: path.join(__dirname, '..', '..', 'test_env.js'),

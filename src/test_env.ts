@@ -31,11 +31,20 @@ export default class CustomEnvironment extends NodeEnvironment {
   }
 
   async teardown() {
+    let start = new Date();
     if (this.coverage) {
       await this.global['saddle'].network_config.providerEngine.stop();
       let coverage = this.global['saddle'].network_config.cov._coverageCollector._collector.getFinalCoverage();
       await writeCoverage(this.global['saddle'].saddle_config, this.testName, coverage);
     }
+    delete this.global['saddle'];
+    delete this.global['web3'];
+    delete this.global['call'];
+    delete this.global['send'];
+    delete this.global['deploy'];
+    delete this.global['account'];
+    delete this.global['accounts'];
+    console.log(`Teardown in ${new Date().getTime() - start.getTime()} ms`)
 
     await super.teardown();
   }

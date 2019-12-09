@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -34,5 +34,9 @@
   },
   "bin": {
     "saddle": "dist/cli.js"
+  },
+  "resolutions": {
+    "sha3": "2.1.1",
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
   }
 }

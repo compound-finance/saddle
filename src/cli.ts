@@ -3,6 +3,7 @@
 import yargs from 'yargs';
 import {compile} from './cli/commands/compile';
 import {deploy} from './cli/commands/deploy';
+import {verify} from './cli/commands/verify';
 import {init} from './cli/commands/init';
 import {test} from './cli/commands/test';
 export { getSaddle, Saddle } from './saddle';
@@ -41,6 +42,31 @@ if (require.main === module) {
       });
 
       deploy(argv.network, contract, contractArgs, false, argv.verbose);
+    })
+    .command('verify <apiKey> <contract>', 'Deploy a contract to given network', (yargs) => {
+      return yargs
+        .positional('apiKey', {
+          describe: 'API Key from Etherscan',
+          type: 'string'
+        })
+        .positional('contract', {
+          describe: 'Contract to deploy (e.g. myContract.sol)',
+          type: 'string'
+        });
+    }, (argv) => {
+      const apiKey: string = <string>argv.apiKey; // required
+      const contract: string = <string>argv.contract; // required
+      const [,...contractArgsRaw] = argv._;
+      const contractArgs = contractArgsRaw.map((arg) => {
+        if (/^\[.*\]$/.test(arg)) {
+          // turn arrays into arrays
+          return arg.substring(1, arg.length-1).split(",");
+        } else {
+          return arg;
+        }
+      });
+
+      verify(argv.network, apiKey, contract, contractArgs, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

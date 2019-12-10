@@ -11,15 +11,18 @@ const BUILD_FILE_NAME = 'contracts.json';
 const COVERAGE_FILE_NAME = 'coverage-contracts.json';
 
 interface ContractBuild {
+  path: string
+  version: string
   abi: string
   bin: string
+  sources: {string: {content: string, keccak256: string}}
 }
 
 function getBuildFile(file: string): string {
   return path.join(process.cwd(), '.build', file);
 }
 
-async function getContractBuild(name: string, coverage: boolean): Promise<ContractBuild> {
+export async function getContractBuild(name: string, coverage: boolean): Promise<ContractBuild> {
   let contracts = await readFile(getBuildFile(coverage ? COVERAGE_FILE_NAME : BUILD_FILE_NAME), {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
 
@@ -29,7 +32,9 @@ async function getContractBuild(name: string, coverage: boolean): Promise<Contra
   });
 
   if (foundContract) {
-    let [_, contractBuild] = foundContract;
+    let [contractPath, contractBuild] = <[string, ContractBuild]>foundContract;
+    contractBuild.path = contractPath.split(':')[0];
+    contractBuild.version = <string>contracts["version"];
 
     return <ContractBuild>contractBuild;
   } else {
@@ -80,7 +85,14 @@ export async function saveContract(name: string, contract: Contract, network: st
   let file = getBuildFile(`${network}.json`);
   let curr = await readFile(file, {}, JSON.parse);
 
-  curr[name] = contract.address;
+  curr[name] = contract._address;
 
   await writeFile(file, JSON.stringify(curr));
+}
+
+export async function loadContractAddress(name: string, network: string): Promise<string | undefined> {
+  let file = getBuildFile(`${network}.json`);
+  let curr = await readFile(file, {}, JSON.parse);
+
+  return curr[name];
 }

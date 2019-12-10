@@ -13,7 +13,7 @@ export async function compile(coverage: boolean, verbose: number): Promise<void>
 
   if (!coverage) {
     outFile = `${buildDir}/contracts.json`;
-    solc = `${config.solc} --combined-json bin,abi --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
+    solc = `${config.solc} --combined-json bin,abi,metadata --metadata-literal --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
   } else {
     outFile = `${buildDir}/coverage-contracts.json`;
     solc = `${config.solc} --combined-json bin,bin-runtime,abi,metadata,asm,srcmap,srcmap-runtime --metadata-literal --optimize ${config.solc_args.join(" ")} ${config.contracts}`;

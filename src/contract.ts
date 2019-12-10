@@ -87,7 +87,7 @@ export async function saveContract(name: string, contract: Contract, network: st
 
   curr[name] = contract._address;
 
-  await writeFile(file, JSON.stringify(curr));
+  await writeFile(file, JSON.stringify(curr, undefined, 2));
 }
 
 export async function loadContractAddress(name: string, network: string): Promise<string | undefined> {

@@ -8,6 +8,27 @@ import {init} from './cli/commands/init';
 import {test} from './cli/commands/test';
 export { getSaddle, Saddle } from './saddle';
 
+function transformArgs(contractArgsRaw) {
+  const transformers = {
+    array: (arg) => arg.split(',').filter(x => x.length > 0)
+  };
+
+  return contractArgsRaw.map((arg) => {
+    let [raw, type] = arg.split(':', 2);
+
+    // Custom array type
+    if (!type && arg.includes(',')) {
+      type = 'array';
+    }
+
+    if (type && transformers[type]) {
+      return transformers[type](raw);
+    } else {
+      return arg;
+    }
+  });
+}
+
 if (require.main === module) {
   yargs
     .option('network', {alias: 'n', description: 'Chosen network', type: 'string', default: 'development'})
@@ -32,14 +53,7 @@ if (require.main === module) {
     }, (argv) => {
       const contract: string = <string>argv.contract; // required
       const [,...contractArgsRaw] = argv._;
-      const contractArgs = contractArgsRaw.map((arg) => {
-        if (/^\[.*\]$/.test(arg)) {
-          // turn arrays into arrays
-          return arg.substring(1, arg.length-1).split(",");
-        } else {
-          return arg;
-        }
-      });
+      const contractArgs = transformArgs(contractArgsRaw);
 
       deploy(argv.network, contract, contractArgs, false, argv.verbose);
     })
@@ -57,14 +71,7 @@ if (require.main === module) {
       const apiKey: string = <string>argv.apiKey; // required
       const contract: string = <string>argv.contract; // required
       const [,...contractArgsRaw] = argv._;
-      const contractArgs = contractArgsRaw.map((arg) => {
-        if (/^\[.*\]$/.test(arg)) {
-          // turn arrays into arrays
-          return arg.substring(1, arg.length-1).split(",");
-        } else {
-          return arg;
-        }
-      });
+      const contractArgs = transformArgs(contractArgsRaw);
 
       verify(argv.network, apiKey, contract, contractArgs, argv.verbose);
     })

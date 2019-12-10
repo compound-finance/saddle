@@ -6,7 +6,7 @@ import {getSaddle} from '../../saddle';
 import {info, debug, warn, error} from '../logger';
 import {describeProvider} from '../../utils';
 
-export async function deploy(network: string, contractName: string, contractArgs: (string|string[])[], coverage: boolean, verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+export async function deploy(network: string, contractName: string, contractArgs: any[], coverage: boolean, verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   let saddle = await getSaddle(network);
 
   info(`Using network ${network} ${describeProvider(saddle.web3.currentProvider)}`, verbose);

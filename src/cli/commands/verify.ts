@@ -103,26 +103,84 @@ async function checkStatus(url: string, token: string, verbose: number): Promise
   info(`Verification result ${result.result}...`, verbose);
 }
 
+const importRegex = /^[ \t]*import\s*\"([^\"]+)\"[\s;]*$\n?/mig;
+const pragmaRegex = /^[ \t]*(pragma[^;]+;)$\n?/mig;
+
+function matchAll(content, regex, index=1): string[] {
+  const results: string[] = [];
+  while (true) {
+    let match = regex.exec(content)
+    if (!match) {
+      break;
+    }
+    results.push(index ? match[index] : match);
+  }
+
+  return results;
+}
+
+function orderEntries(sources: {string: {content: string}}) {
+  const entries = Object.entries(sources);
+
+  const deps = entries.reduce((acc, [name, {content: content}]) => {
+    const entryDeps = matchAll(content, importRegex, 1)
+                        .map(file => path.join(path.dirname(name), file));
+    return {
+      ...acc,
+      [name]: entryDeps
+    };
+  }, {});
+
+  function addDeps(includedDeps: string[], totalDeps: object) {
+    if (Object.keys(totalDeps).length === 0) {
+      return includedDeps;
+    }
+
+    const originalLength = includedDeps.length;
+
+    Object.entries(totalDeps).forEach(([name, deps]) => {
+      const sat = deps.every((dep) => includedDeps.includes(dep));
+
+      if (sat) {
+        includedDeps.push(name);
+        delete totalDeps[name];
+      }
+    });
+
+    if (includedDeps.length === originalLength) {
+      throw new Error(`Cannot satisify dependency tree: included: ${JSON.stringify(includedDeps)}, total: ${JSON.stringify(totalDeps)}`);
+    }
+
+    return addDeps(includedDeps, totalDeps);
+  }
+
+  const order = addDeps([], deps);
+
+  return order.map((el) => [el, sources[el]]);
+}
+
 function flattenSources(sources: {string: {content: string}}, contractName: string): string {
-  return Object.entries(sources).reduce((acc, [name, {content: content}]) => {
-    return acc + content.replace(/^\s+import [^\n]+$\n?/mig, '');
+  const flattened = orderEntries(sources).reduce((acc, [name, {content: content}]) => {
+    return acc + content.replace(importRegex, '');
   }, '');
+
+  const pragmas = matchAll(flattened, pragmaRegex, 1);
+  const pragmaHeader = [...new Set(pragmas)].join("\n");
+
+  return pragmaHeader + "\n" + flattened.replace(pragmaRegex, '');
 }
 
 function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (string|string[])[]): string {
   const constructorAbi = abi.find((x) => x.type === 'constructor');
-   let inputs;
 
-  if (constructorAbi) {
-    inputs = constructorAbi.inputs;
+  if (!constructorAbi) {
+    return "0x";
   } else {
-    inputs = [];
+    return new Web3().eth.abi.encodeParameters(constructorAbi.inputs, contractArgs);
   }
-
-  return new Web3().eth.abi.encodeParameters(inputs, contractArgs);
 }
 
-export async function verify(network: string, apiKey: string, contractName: string, contractArgs: (string|string[])[], verbose: number): Promise<void> {
+export async function verify(network: string, apiKey: string, contractName: string, contractArgs: any[], verbose: number): Promise<void> {
   info(`Verifying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let contractAddress = await loadContractAddress(contractName, network);
@@ -150,6 +208,8 @@ export async function verify(network: string, apiKey: string, contractName: stri
   };
 
   info(`Verifying ${contractName} at ${contractAddress} with compiler version ${compilerVersion}...`, verbose);
+  debug(`Etherscan API Request:\n\n${JSON.stringify(verifyData, undefined, 2)}`, verbose);
+  debug(sourceCode, verbose);
 
   // Potential results
   // {"status":"0","message":"NOTOK","result":"Invalid constructor arguments provided. Please verify that they are in ABI-encoded format"}

@@ -105,7 +105,7 @@ async function checkStatus(url: string, token: string, verbose: number): Promise
 
 function flattenSources(sources: {string: {content: string}}, contractName: string): string {
   return Object.entries(sources).reduce((acc, [name, {content: content}]) => {
-    return acc + content.replace(/^\s+import [^\n]+$/mig, '');
+    return acc + content.replace(/^\s+import [^\n]+$\n?/mig, '');
   }, '');
 }
 
@@ -125,16 +125,13 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
 export async function verify(network: string, apiKey: string, contractName: string, contractArgs: (string|string[])[], verbose: number): Promise<void> {
   info(`Verifying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
-  console.log(contractName, network);
   let contractAddress = await loadContractAddress(contractName, network);
   if (!contractAddress) {
-    throw new Error(`Cannot find contract ${contractName}`)
+    throw new Error(`Cannot find contract ${contractName}- was it deployed to ${network}?`);
   }
   let contractBuild = await getContractBuild(contractName, false);
   let metadata = JSON.parse((<any>contractBuild).metadata);
-  console.log(metadata.sources);
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
-  console.log(sourceCode);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
   let constructorAbi = getConstructorABI(JSON.parse(contractBuild.abi), contractArgs);
   let url = getUrl(network);
@@ -152,7 +149,7 @@ export async function verify(network: string, apiKey: string, contractName: stri
     constructorArguements: constructorAbi.slice(2)
   };
 
-  console.log(`Verifying ${contractName} at ${contractAddress} with compiler version ${compilerVersion}...`);
+  info(`Verifying ${contractName} at ${contractAddress} with compiler version ${compilerVersion}...`, verbose);
 
   // Potential results
   // {"status":"0","message":"NOTOK","result":"Invalid constructor arguments provided. Please verify that they are in ABI-encoded format"}
@@ -162,7 +159,7 @@ export async function verify(network: string, apiKey: string, contractName: stri
 
   if (Number(result.status) === 0 || result.message !== "OK") {
     if (result.result.includes('Contract source code already verified')) {
-      console.log(`Contract already verified`);
+      warn(`Contract already verified`, verbose);
     } else {
       throw new Error(`Etherscan Error: ${result.message}: ${result.result}`)
     }

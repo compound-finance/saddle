@@ -104,6 +104,20 @@ Saddle provides a few helper functions for your tests, which are:
 
 You can really get by without using most of these functions (except maybe deploy), since they are light wrappers around web3 functions, but the wrappers will allow saddle to provide better helpers and diagnostics in the future.
 
+## CLI
+
+Deploying a contract:
+
+```
+npx saddle deploy MyContract Arg0 Arg1 -n rinkeby
+```
+
+Verifying a contract on [Etherscan](https://etherscan.io):
+
+```
+npx saddle verify "{Etherscan API Key}" MyContract Arg0 Arg1 -n rinkeby
+```
+
 ## Configuration
 
 Saddle comes with reasonable default configuration, but you can override it. The core of the configuration is a list of "sources" for any given configuration-item, allowing the framework to look at say an environment variable for a provider, or if that is missing, a file with the provider information, or if that is missing, use a default http endpoint. This would be described as:

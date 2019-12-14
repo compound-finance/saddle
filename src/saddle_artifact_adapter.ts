@@ -33,21 +33,10 @@ export class SaddleArtifactAdapter extends AbstractArtifactAdapter {
 
   public async collectContractsDataAsync() {
     const contractsFile = `${this._buildDir}/${this._contractsFile}`;
-    const contracts: {string: object} = JSON.parse(await promisify(fs.readFile)(contractsFile, 'utf8'))['contracts'];
-
-    let {sourceIndex} = Object.entries(contracts).reduce(({i, sourceIndex}, [contractName, contract]) => {
-      if (contract['srcmap'] === '') {
-        return {i, sourceIndex};
-      } else {
-        return {
-          i: i + 1,
-          sourceIndex: {
-            ...sourceIndex,
-            [contractName.split(':')[0]]: i + 1
-          }
-        };
-      }
-    }, {i: 0, sourceIndex: {}});
+    const json = JSON.parse(await promisify(fs.readFile)(contractsFile, 'utf8'))
+    const contracts: {string: object} = json['contracts'];
+    const sourceList: string[] = json['sourceList'];
+    const sourceIndex = sourceList.reduce((acc, el, i) => ({...acc, [el]: i}), {});
 
     return Object.entries(contracts).reduce((res, [contractName, contract]) => {
       let metadata = JSON.parse(contract['metadata']);

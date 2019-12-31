@@ -32,8 +32,6 @@ export async function test(argv: yargs.Arguments, coverage: boolean, verbose: nu
   }, [process.cwd()]);
 
   if (!res.results.success) {
-    (<any>process.once)("drain", () => {
-      process.exit(1);
-    });
+    process.exitCode = 1;
   }
 }

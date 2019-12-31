@@ -59,7 +59,7 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, saddle_config.coverage, network_config.defaultOptions, options);
   }
 
-  async function call(callable, callOptions: CallOptions={}): Promise<any> {
+  async function call(callable, callOptions: CallOptions={}, blockNumber?: number): Promise<any> {
     // Allow old-style sends for now
     if (callable.methods && callable.methods[callOptions]) {
       callable = callable.methods[callOptions].apply(callable, arguments[2]);
@@ -71,7 +71,7 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
       ...callOptions
     };
 
-    return callable.call(options);
+    return callable.call(options, blockNumber);
   }
 
   async function send(sendable, sendOptions: SendOptions={}): Promise<any> {

@@ -64,6 +64,7 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
     if (callable.methods && callable.methods[callOptions]) {
       callable = callable.methods[callOptions].apply(callable, arguments[2]);
       callOptions = arguments[3];
+      blockNumber = arguments[4];
     }
 
     let options = {

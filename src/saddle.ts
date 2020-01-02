@@ -72,7 +72,7 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
       ...callOptions
     };
 
-    return callable.call(options, blockNumber);
+    return callable.call(options, blockNumber || null);
   }
 
   async function send(sendable, sendOptions: SendOptions={}): Promise<any> {

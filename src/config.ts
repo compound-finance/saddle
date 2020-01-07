@@ -14,6 +14,8 @@ type NumericSource = { env: string } | { default: string }
 type ProviderSource = { env: string } | { file: string } | { http: string } | { ganache: object }
 type AccountSource = { env: string } | { file: string } | { unlocked: number }
 
+export const Ganache = ganache;
+
 export interface SaddleWeb3Config {
   gas: NumericSource | NumericSource[]
   gas_price: NumericSource | NumericSource[]

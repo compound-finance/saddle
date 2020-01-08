@@ -6,7 +6,7 @@ import {arr, mergeDeep, tryNumber, readFile} from './utils';
 import {debug} from './cli/logger';
 import ProviderEngine from 'web3-provider-engine';
 import { CoverageSubprovider } from '@compound-finance/sol-coverage';
-import { GanacheSubprovider } from '@0x/subproviders';
+import { GanacheSubprovider } from './ganache_subprovider';
 import { SaddleArtifactAdapter } from './saddle_artifact_adapter';
 const RpcSubprovider = require('web3-provider-engine/subproviders/rpc.js')
 

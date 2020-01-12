@@ -10,6 +10,7 @@ module.exports = {
   coverage_ignore: [],                                  // List of files to ignore for coverage
   contracts: "contracts/*.sol",                         // Glob to match contract files
   tests: ['**/tests/*.js'],                             // Glob to match test files
+  trace: false,                                         // Compile with debug artifacts
   networks: {                                           // Define configuration for each network
     development: {
       providers: [                                      // How to load provider (processed in order)

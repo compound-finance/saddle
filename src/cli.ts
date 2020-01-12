@@ -36,13 +36,13 @@ if (require.main === module) {
     .alias('v', 'verbose')
     .command('compile', 'Compiles all contracts', (yargs) => {
       return yargs
-        .option('coverage', {
-          describe: 'Build contracts for coverage',
+        .option('trace', {
+          describe: 'Build contracts with detailed debug information',
           type: 'boolean',
           default: false
         });
     }, (argv) => {
-      compile(argv.coverage, argv.verbose)
+      compile(argv.trace, argv.verbose)
     })
     .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs

@@ -38,7 +38,6 @@ export interface SaddleConfig {
   contracts: string
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
-  coverage: boolean
   trace: boolean
 }
 
@@ -66,7 +65,7 @@ export interface NetworkConfig {
   artifactAdapter: SaddleArtifactAdapter | undefined
 }
 
-export async function loadConfig(file?: string, coverage?: boolean): Promise<SaddleConfig> {
+export async function loadConfig(file?: string, trace?: boolean): Promise<SaddleConfig> {
   let customJson = {};
 
   try {
@@ -78,7 +77,7 @@ export async function loadConfig(file?: string, coverage?: boolean): Promise<Sad
   }
 
   const defaultJson = require(path.join(__dirname, '..', 'saddle.config.js'));
-  defaultJson.coverage = coverage || false;
+  defaultJson.trace = trace === undefined ? false : trace;
 
   return mergeDeep(defaultJson, customJson);
 }
@@ -151,7 +150,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
   let web3, coverageSubprovider, providerEngine;
 
   // XXXS TODO: make this nicer, obviously
-  if (config.coverage && artifactAdapter) {
+  if (config.trace && artifactAdapter) {
     let ganacheConfig = providers.reduce((config, el) => {
       if (el['ganache']) {
         return el['ganache'];
@@ -204,7 +203,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
   }
 
   let artifactAdapter;
-  if (config.trace || config.coverage) {
+  if (config.trace) {
     artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'contracts-trace.json', config.coverage_ignore); 
   }
 

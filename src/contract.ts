@@ -8,7 +8,7 @@ import { readFile, writeFile } from './file';
 import {ABIItem} from 'web3-utils';
 
 const BUILD_FILE_NAME = 'contracts.json';
-const COVERAGE_FILE_NAME = 'coverage-contracts.json';
+const TRACE_FILE_NAME = 'contracts-trace.json';
 
 interface ContractBuild {
   path: string
@@ -22,8 +22,9 @@ function getBuildFile(file: string): string {
   return path.join(process.cwd(), '.build', file);
 }
 
-export async function getContractBuild(name: string, coverage: boolean): Promise<ContractBuild> {
-  let contracts = await readFile(getBuildFile(coverage ? COVERAGE_FILE_NAME : BUILD_FILE_NAME), {}, JSON.parse);
+export async function getContractBuild(name: string, trace: boolean): Promise<ContractBuild> {
+  let buildFile = getBuildFile(trace ? TRACE_FILE_NAME : BUILD_FILE_NAME)
+  let contracts = await readFile(buildFile, {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
 
   let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {
@@ -38,30 +39,30 @@ export async function getContractBuild(name: string, coverage: boolean): Promise
 
     return <ContractBuild>contractBuild;
   } else {
-    throw new Error(`Cannot find contract \`${name}\` in build folder.`);
+    throw new Error(`Cannot find contract \`${name}\` in build file \`${buildFile}\`.`);
   }
 }
 
-export async function getContractABI(name: string, coverage: boolean): Promise<ABIItem[]> {
-  const contractBuild = await getContractBuild(name, coverage);
+export async function getContractABI(name: string, trace: boolean): Promise<ABIItem[]> {
+  const contractBuild = await getContractBuild(name, trace);
   return JSON.parse(contractBuild.abi);
 }
 
-export async function getContract(web3: Web3, name: string, coverage: boolean, defaultOptions: Web3ModuleOptions): Promise<Contract> {
-  const contractBuild = await getContractBuild(name, coverage);
+export async function getContract(web3: Web3, name: string, trace: boolean, defaultOptions: Web3ModuleOptions): Promise<Contract> {
+  const contractBuild = await getContractBuild(name, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
   const contract = new web3.eth.Contract(contractAbi);
   return contract;
 }
 
-export async function getContractAt(web3: Web3, name: string, coverage: boolean, address: string, defaultOptions: Web3ModuleOptions): Promise<Contract> {
-  const contract = await getContract(web3, name, coverage, defaultOptions);
+export async function getContractAt(web3: Web3, name: string, trace: boolean, address: string, defaultOptions: Web3ModuleOptions): Promise<Contract> {
+  const contract = await getContract(web3, name, trace, defaultOptions);
   contract._address = address;
   return contract;
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], coverage: boolean, defaultOptions: Web3ModuleOptions, sendOptions: SendOptions = {}): Promise<{contract: Contract, receipt: TransactionReceipt}> {
-  const contractBuild = await getContractBuild(name, coverage);
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], trace: boolean, defaultOptions: Web3ModuleOptions, sendOptions: SendOptions = {}): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+  const contractBuild = await getContractBuild(name, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
   const web3Contract = new web3.eth.Contract(contractAbi, undefined, defaultOptions);
 

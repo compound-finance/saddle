@@ -39,6 +39,7 @@ export interface SaddleConfig {
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
   coverage: boolean
+  trace: boolean
 }
 
 export interface Web3Config {
@@ -62,6 +63,7 @@ export interface NetworkConfig {
   defaultOptions: Web3ModuleOptions
   cov: CoverageSubprovider | undefined
   providerEngine: ProviderEngine | undefined
+  artifactAdapter: SaddleArtifactAdapter | undefined
 }
 
 export async function loadConfig(file?: string, coverage?: boolean): Promise<SaddleConfig> {
@@ -141,14 +143,15 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
+async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, artifactAdapter: SaddleArtifactAdapter | undefined, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
   let provider = await findValidConfig(providers, fetchProvider)
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
 
   let web3, coverageSubprovider, providerEngine;
+
   // XXXS TODO: make this nicer, obviously
-  if (config.coverage) {
+  if (config.coverage && artifactAdapter) {
     let ganacheConfig = providers.reduce((config, el) => {
       if (el['ganache']) {
         return el['ganache'];
@@ -156,7 +159,6 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
         return config;
       }
     }, {});
-    const artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'coverage-contracts.json', config.coverage_ignore);
     coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
     const blockTracker = {
       on: () => null,
@@ -201,7 +203,12 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     throw new Error(`missing network ${network} in config`);
   }
 
-  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, config);
+  let artifactAdapter;
+  if (config.trace || config.coverage) {
+    artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'contracts-trace.json', config.coverage_ignore); 
+  }
+
+  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, artifactAdapter, config);
 
   return {
     solc: config.solc,
@@ -217,6 +224,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     account,
     defaultOptions,
     cov,
-    providerEngine
+    providerEngine,
+    artifactAdapter
   };
 }

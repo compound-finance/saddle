@@ -5,6 +5,7 @@ import {ABIItem} from 'web3-utils';
 import {Contract, SendOptions, CallOptions} from 'web3-eth-contract';
 import {describeProvider} from './utils';
 import { TransactionReceipt } from 'web3-eth';
+import { buildTracer, TraceOptions } from './trace';
 
 export interface Saddle {
   account: string,
@@ -19,6 +20,7 @@ export interface Saddle {
   web3: Web3
   send: (sendable: any, sendOptions?: any) => Promise<any>
   call: (callable: any, callOptions?: any) => Promise<any>
+  trace: (receipt: TransactionReceipt, options: TraceOptions) => Promise<any>
 }
 
 export async function getSaddle(network, coverage=false): Promise<Saddle> {
@@ -106,6 +108,7 @@ export async function getSaddle(network, coverage=false): Promise<Saddle> {
     send: send,
     call: call,
     getContract: getContractInt,
-    getContractAt: getContractAtInt
+    getContractAt: getContractAtInt,
+    trace: await buildTracer(network_config)
   };
 }

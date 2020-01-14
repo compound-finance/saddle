@@ -1,29 +1,15 @@
 import { NetworkConfig } from './config';
 import { TraceCollector, parseSourceMap } from '@0x/sol-tracing-utils';
-import { TransactionReceipt } from 'web3-eth';
+import { TransactionReceipt } from 'web3-core';
 import { stripHexPrefix } from 'ethereumjs-util';
 import chalk from 'chalk';
 import Web3 from 'web3';
-import { augmentLogs } from './trace/descriptor';
+import { TraceInfo, augmentLogs } from './trace/descriptor';
 
 interface Trace {
   gas: number,
   returnValue: any,
   structLogs: StructLog[]
-}
-
-export interface TraceInfo {
-  lastLog: undefined | StructLog,
-  inv: InversionMap
-}
-
-export interface InversionItem {
-  operation: string
-  inputs: string[]
-}
-
-export interface InversionMap {
-  [key: string]: InversionItem[]
 }
 
 export interface StructLog {
@@ -36,12 +22,6 @@ export interface StructLog {
   pc: number,
   stack: string[],
   storage: {[key: string]: string}
-  source: undefined | any
-  sourceLine: undefined | string,
-  desc: undefined | string
-  lastDesc: undefined | string
-  sha: object
-  show: undefined | (() => void)
 }
 
 export interface TraceOptions {
@@ -131,7 +111,7 @@ export async function buildTracer(network_config: NetworkConfig) {
       await traceOpts.onTrace(trace);
     }
 
-    let {logs: augmentedLogs, info: info} = augmentLogs(trace.structLogs, traceOpts.constants || {});
+    let { logs: augmentedLogs, info: info } = augmentLogs(trace.structLogs, traceOpts.constants || {});
     let filteredLogs = traceOpts.preFilter ? augmentedLogs.filter(traceOpts.preFilter) : augmentedLogs;
 
     if (pcToSourceRange && inverted) {
@@ -139,10 +119,11 @@ export async function buildTracer(network_config: NetworkConfig) {
         let offset = pcToSourceRange[log.pc];
         let sourceFile = inverted[offset.fileName];
 
-        return {
-          ...log,
-          ...getSource(offset, sourceFile)
-        }
+        let {source, sourceLine} = getSource(offset, sourceFile);
+
+        log.setSource(source, sourceLine);
+
+        return log;
       });
     }
 

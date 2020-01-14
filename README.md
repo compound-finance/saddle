@@ -9,21 +9,15 @@ Saddle is a simple framework for developing Ethereum Smart Contracts. Think of i
 
   * Allows you to compile and deploy your contracts.
   * Add fast, parallelized tests for your contracts.
+  * Trace and debug your contracts
+  * Verify your contracts on Etherscan
 
-** What saddle does not**
+**What saddle does not**
 
   * Migrations. It's just "deploy".
   * Solidity-language tests
   * npm-based Solidity plugins
-  * solcjs
-  * complex configuration
-  * bloat
-
-** What saddle wants to do... one day**
-
-  * Smart code coverage (via vm trace's)
-  * Smart revert messages (e.g. backtraces for Solidity errors)
-  * Verify your contracts on Etherscan
+  * solcjs [that is, for performance, saddle requires native solc]
 
 ## Installing Saddle
 
@@ -44,7 +38,7 @@ Let's assume you define a simple Ethereum contract:
 `contracts/MyContract.sol`
 
 ```javascript
-pragma solidity ^0.5.9;
+pragma solidity ^0.5.12;
 
 contract MyContract {
 	function myFunc() pure external returns (uint256) {
@@ -67,7 +61,7 @@ After you've compiled, you can deploy your contracts:
 npx saddle deploy -n development
 ```
 
-This will deploy your comiled contracts to development (for this, you should have [ganache](https://github.com/trufflesuite/ganache) running). For more information on configuring your deployment for rinkeby or mainnet, see the configuration section below.
+This will deploy your comiled contracts to development (for this, you should have [ganache-cli](https://github.com/trufflesuite/ganache-cli) running). For more information on configuring your deployment for rinkeby or mainnet, see the configuration section below.
 
 After you have deployed, you will also see the contract address listed in `./build/development.json`, if you want to keep track of your deployments.
 
@@ -99,10 +93,58 @@ Saddle provides a few helper functions for your tests, which are:
 * `account` - The default account for web3
 * `accounts` - A list of unlocked accounts for web3
 * `deploy(contract: string, args: any[], sendOptions: SendOptions={})` - Deploys a contract
-* `call(callable, callOptions: CallOptions={})` - Call a function on a contract
-* `send(sendable, sendOptions: SendOptions={})` - Send a transaction on a contract
+* `call(contract: Contract, method: string, arguments: any[], callOptions: CallOptions={})` - Call a function on a contract
+* `send(contract: Contract, method: string, arguments: any[], sendOptions: SendOptions={})` - Send a transaction on a contract
 
 You can really get by without using most of these functions (except maybe deploy), since they are light wrappers around web3 functions, but the wrappers will allow saddle to provide better helpers and diagnostics in the future.
+
+## Tracing
+
+Saddle comes with a tracing library that can analyze transaction receipts. This is useful in debugging and testing. For example:
+
+```javascript
+test('balance has one read', async () => {
+  // Run the transaction (here, balanceOf) so we can trace it
+  let trxReceipt = await comp.methods.balanceOf(saddle.accounts[0]).send();
+
+  await saddle.trace(trxReceipt, {
+    constants: {
+      "account": saddle.accounts[0] // tracing code will note this as an address
+    },
+    preFilter: ({op}) => op === 'SLOAD', // filter all operations to find only SLOADs
+    // we can filter by source code if we want
+    // note: source code only available when running in `trace mode`
+    postFilter: ({source}) => !source || source.includes('balanceOf'),
+    execLog: (log) => {
+      log.show(); // show each load operation
+    },
+    exec: (logs, info) => {
+      expect(logs.length).toEqual(1); // make sure there's only one matching operation
+    }
+  });
+});
+```
+
+The code above will trace and make sure only one Ethereum read operation was called in that operation. The logs (when run in trace mode) will look like this:
+
+```bash
+Log       pc=503 op=SLOAD source=contracts/Token.sol:100[24-45]
+Solidity  uint balance = _balances[account];
+          ↓
+EVM Asm   SLOAD[SHA3(CONCAT(account,0x4))]-> 0x1
+```
+
+That is, when the program counter (PC) reached 503, we did an SLOAD from line 100 of Token.sol (shown below). The SLOAD was based on the SHA3 of the `account` address added to `0x4` (Solidity's fourth slot) and yielded a balance of 1 wei.
+
+Trace Features:
+
+* `constants` - Saddle's data analysis tool will note that these values should be tokenized. Note: saddle expects values like this to be globally unique (like addresses or hash results).
+* `preFilter` - Given a simple trace log object, return true to continue processing on that log. Each log will go through detailed tracing and it's good to remove irrelevant logs here.
+* `postFilter` - After each log has been analyzed and mapped to source code, you can add additional filters here.
+* `execLog` - Once per log, run the following (possibly async) function.
+* `exec` - Once per trace, run the following function with all logs passed in.
+
+If you have new features or analysis you'd like to add to tracing, feel free to open an issue or craft a PR. The goal is to make useful analysis tools to help bridge the mental model of Solidity to the Ethereum virtual machine.
 
 ## CLI
 

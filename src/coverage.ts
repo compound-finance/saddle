@@ -1,7 +1,7 @@
-import {NetworkConfig} from './config';
+import { NetworkConfig } from './config';
 import * as path from 'path';
 import * as fs from 'fs';
-import {promisify} from 'util';
+import { promisify } from 'util';
 
 let mkdir = promisify(fs.mkdir);
 let rmdir = promisify(fs.rmdir);

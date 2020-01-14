@@ -1,9 +1,10 @@
 import Web3 from 'web3';
-import {Web3ModuleOptions, Provider} from 'web3-core';
+import { HttpProvider } from 'web3-providers';
+import { SendOptions } from 'web3-eth-contract';
 import path from 'path';
 import ganache from 'ganache-core';
 import {arr, mergeDeep, tryNumber, readFile} from './utils';
-import {debug} from './cli/logger';
+import { debug } from './cli/logger';
 import ProviderEngine from 'web3-provider-engine';
 import { CoverageSubprovider } from '@compound-finance/sol-coverage';
 import { GanacheSubprovider } from './ganache_subprovider';
@@ -19,7 +20,7 @@ export const Ganache = ganache;
 export interface SaddleWeb3Config {
   gas: NumericSource | NumericSource[]
   gas_price: NumericSource | NumericSource[]
-  options: Web3ModuleOptions
+  options: SendOptions
 }
 
 export interface SaddleNetworkConfig {
@@ -59,7 +60,7 @@ export interface NetworkConfig {
   network: string
   web3: Web3
   account: string
-  defaultOptions: Web3ModuleOptions
+  defaultOptions: SendOptions
   cov: CoverageSubprovider | undefined
   providerEngine: ProviderEngine | undefined
   artifactAdapter: SaddleArtifactAdapter | undefined
@@ -82,9 +83,9 @@ export async function loadConfig(file?: string, trace?: boolean): Promise<Saddle
   return mergeDeep(defaultJson, customJson);
 }
 
-async function fetchProvider(source: ProviderSource): Promise<Provider | undefined> {
+async function fetchProvider(source: ProviderSource): Promise<HttpProvider | ganache.Provider | undefined> {
   function maybeProvider(source: string | undefined) {
-    return source && source.length > 0 ? new Web3.providers.HttpProvider(source) : undefined;
+    return source && source.length > 0 ? new HttpProvider(source) : undefined;
   }
 
   if (!source) {
@@ -142,7 +143,7 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, artifactAdapter: SaddleArtifactAdapter | undefined, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: Web3ModuleOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
+async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, artifactAdapter: SaddleArtifactAdapter | undefined, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: SendOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
   let provider = await findValidConfig(providers, fetchProvider)
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
@@ -177,7 +178,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
     return fetchAccount(el, web3);
   });
 
-  let defaultOptions: Web3ModuleOptions = {
+  let defaultOptions: SendOptions = {
     ...web3Config.options,
     gas,
     gasPrice,

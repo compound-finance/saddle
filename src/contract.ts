@@ -1,11 +1,11 @@
 import Web3 from 'web3';
 import { Contract, SendOptions } from 'web3-eth-contract';
-import { Web3ModuleOptions } from 'web3-core';
-import { TransactionReceipt } from 'web3-eth';
+import newContract from 'web3-eth-contract';
+import { TransactionReceipt } from 'web3-core';
 import * as path from 'path';
 import ganache from 'ganache-core';
 import { readFile, writeFile } from './file';
-import {ABIItem} from 'web3-utils';
+import { AbiItem } from 'web3-utils';
 
 const BUILD_FILE_NAME = 'contracts.json';
 const TRACE_FILE_NAME = 'contracts-trace.json';
@@ -43,28 +43,31 @@ export async function getContractBuild(name: string, trace: boolean): Promise<Co
   }
 }
 
-export async function getContractABI(name: string, trace: boolean): Promise<ABIItem[]> {
+export async function getContractABI(name: string, trace: boolean): Promise<AbiItem[]> {
   const contractBuild = await getContractBuild(name, trace);
   return JSON.parse(contractBuild.abi);
 }
 
-export async function getContract(web3: Web3, name: string, trace: boolean, defaultOptions: Web3ModuleOptions): Promise<Contract> {
+export async function getContract(web3: Web3, name: string, trace: boolean, defaultOptions: SendOptions): Promise<Contract> {
   const contractBuild = await getContractBuild(name, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
-  const contract = new web3.eth.Contract(contractAbi);
+  (<any>newContract).setProvider((<any>web3).currentProvider);
+  const contract = <Contract>(new (<any>newContract)(contractAbi));
+
   return contract;
 }
 
-export async function getContractAt(web3: Web3, name: string, trace: boolean, address: string, defaultOptions: Web3ModuleOptions): Promise<Contract> {
+export async function getContractAt(web3: Web3, name: string, trace: boolean, address: string, defaultOptions: SendOptions): Promise<Contract> {
   const contract = await getContract(web3, name, trace, defaultOptions);
-  contract._address = address;
+  contract.options.address = address;
   return contract;
 }
 
-export async function deployContract(web3: Web3, network: string, name: string, args: any[], trace: boolean, defaultOptions: Web3ModuleOptions, sendOptions: SendOptions = {}): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+export async function deployContract(web3: Web3, network: string, name: string, args: any[], trace: boolean, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   const contractBuild = await getContractBuild(name, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
-  const web3Contract = new web3.eth.Contract(contractAbi, undefined, defaultOptions);
+  (<any>newContract).setProvider((<any>web3).currentProvider);
+  const web3Contract = <Contract>(new (<any>newContract)(contractAbi, undefined, defaultOptions));
 
   const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
   let receiptResolveFn;
@@ -86,7 +89,7 @@ export async function saveContract(name: string, contract: Contract, network: st
   let file = getBuildFile(`${network}.json`);
   let curr = await readFile(file, {}, JSON.parse);
 
-  curr[name] = contract._address;
+  curr[name] = contract.options.address;
 
   await writeFile(file, JSON.stringify(curr, undefined, 2));
 }

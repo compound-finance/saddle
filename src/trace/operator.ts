@@ -1,8 +1,15 @@
-import { StructLog, TraceInfo } from '../trace';
-import { Desc, addInv, showInv } from './descriptor';
-import { last, lastN } from './utils';
+import { StructLog } from '../trace';
+import { Desc, TraceInfo } from './descriptor';
+import { addInv, showInv } from './inversion';
+import { last, lastN, trimZero } from './utils';
 
-function buildDesc(desc: Desc, info: TraceInfo): { inputs: string[], outputs: string[], desc: string } {
+export interface ExtendedInfo {
+  inputs: string[]
+  outputs: string[]
+  desc: string
+}
+
+function buildDesc(desc: Desc, info: TraceInfo): ExtendedInfo {
   let inputs = '';
   let outputs = '';
 
@@ -13,7 +20,7 @@ function buildDesc(desc: Desc, info: TraceInfo): { inputs: string[], outputs: st
   }
 
   if (desc.outputs.length > 0) {
-    outputs = `-> ${desc.outputs.join(',')}`;
+    outputs = `-> 0x${desc.outputs.map(trimZero).join(',')}`;
   }
 
   return {
@@ -37,10 +44,7 @@ function buildOpDesc(log: StructLog, nextStack: string[], info: TraceInfo, opInf
   }
 
   return {
-    log: {
-      ...log,
-      ...buildDesc(desc, info),
-    },
+    extended: buildDesc(desc, info),
     info: {
       ...info,
       inv
@@ -51,14 +55,11 @@ function buildOpDesc(log: StructLog, nextStack: string[], info: TraceInfo, opInf
 function pushFn(n: number) {
   return function(log: StructLog, nextStack: string[], info: TraceInfo) {
     return {
-      log: {
-        ...log,
-        ...buildDesc({
-          op: log.op,
-          inputs: lastN(nextStack, 1),
-          outputs: []
-        }, info)
-      },
+      extended: buildDesc({
+        op: log.op,
+        inputs: lastN(nextStack, 1),
+        outputs: []
+      }, info),
       info: {
         ...info,
         inv: addInv(info.inv, log.op, lastN(nextStack, 1), [])
@@ -70,14 +71,11 @@ function pushFn(n: number) {
 function swapFn(n: number) {
   return function(log: StructLog, nextStack: string[], info: TraceInfo) {
     return {
-      log: {
-        ...log,
-        ...buildDesc({
-          op: log.op,
-          inputs: [last(nextStack, 1)],
-          outputs: [last(nextStack, n)]
-        }, info)
-      },
+      extended: buildDesc({
+        op: log.op,
+        inputs: [last(nextStack, 1)],
+        outputs: [last(nextStack, n)]
+      }, info),
       info
     }
   };
@@ -86,14 +84,11 @@ function swapFn(n: number) {
 function dupFn(n: number) {
   return function(log: StructLog, nextStack: string[], info: TraceInfo) {
     return {
-      log: {
-        ...log,
-        ...buildDesc({
-          op: log.op,
-          inputs: lastN(nextStack, n),
-          outputs: lastN(nextStack, n)
-        }, info)
-      },
+      extended: buildDesc({
+        op: log.op,
+        inputs: lastN(nextStack, n),
+        outputs: lastN(nextStack, n)
+      }, info),
       info
     }
   };
@@ -102,14 +97,11 @@ function dupFn(n: number) {
 function logFn(n: number) {
   return function(log: StructLog, nextStack: string[], info: TraceInfo) {
     return {
-      log: {
-        ...log,
-        ...buildDesc({
-          op: log.op,
-          inputs: lastN(log.stack, n),
-          outputs: []
-        }, info)
-      },
+      extended: buildDesc({
+        op: log.op,
+        inputs: lastN(log.stack, n),
+        outputs: []
+      }, info),
       info
     }
   };
@@ -125,17 +117,14 @@ function sha(log: StructLog, nextStack: string[], info: TraceInfo) {
   let inv = addInv(info.inv, log.op, inputs, outputs);
 
   return {
-    log: {
-      ...log,
-      ...buildDesc({op: log.op, inputs, outputs}, info),
-      sha: {
-        ...log.sha,
-        [inputs[0]]: outputs[0]
-      }
-    },
+    extended: buildDesc({op: log.op, inputs, outputs}, info),
     info: {
       ...info,
-      inv
+      inv,
+      sha: {
+        ...info.sha,
+        [inputs[0]]: outputs[0]
+      }
     }
   };
 }
@@ -149,7 +138,7 @@ interface OpInfo {
   addInv?: boolean
 }
 
-type DescFn = (log: StructLog, nextStack: string[], info: TraceInfo) => {log: StructLog, info: TraceInfo}
+type DescFn = (log: StructLog, nextStack: string[], info: TraceInfo) => {extended: ExtendedInfo, info: TraceInfo}
 
 const opcodes: {[name: string]: OpInfo | DescFn | null } = {
   // 0x0 range - arithmetic ops
@@ -319,11 +308,18 @@ const opcodes: {[name: string]: OpInfo | DescFn | null } = {
   SELFBALANCE: { inputs: 0, outputs: 1 },
 }
 
-export function describeOperation(log: StructLog, nextStack: string[], info: TraceInfo): { log: StructLog, info: TraceInfo } {
+export function describeOperation(log: StructLog, nextStack: string[], info: TraceInfo): { extended: ExtendedInfo, info: TraceInfo } {
   let opinfo = opcodes[log.op];
 
   if (!opinfo) {
-    return { log, info };
+    return {
+      extended: {
+        desc: log.op,
+        inputs: [],
+        outputs: []
+      },
+      info
+    };
   } else if (typeof(opinfo) === 'function') {
     return opinfo(log, nextStack, info);
   } else {

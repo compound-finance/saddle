@@ -2,7 +2,7 @@ import * as fs from 'fs';
 
 export async function mkdirp(file: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    fs.mkdir(file, {recursive: true}, (err) => {
+    fs.mkdir(file, { recursive: true }, (err) => {
       if (err && err.code != 'EEXIST')
         return reject(err);
       return resolve();

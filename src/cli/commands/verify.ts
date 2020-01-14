@@ -5,8 +5,8 @@ import {
   getContractBuild,
   loadContractAddress
 } from '../../contract';
-import Web3 from 'web3';
-import {info, debug, warn, error} from '../logger';
+import { AbiCoder } from 'web3-eth-abi';
+import { info, debug, warn, error } from '../logger';
 
 interface DevDoc {
   author: string
@@ -176,7 +176,7 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   if (!constructorAbi) {
     return "0x";
   } else {
-    return new Web3().eth.abi.encodeParameters(constructorAbi.inputs, contractArgs);
+    return new AbiCoder().encodeParameters(constructorAbi.inputs, contractArgs);
   }
 }
 

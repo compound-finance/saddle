@@ -78,9 +78,12 @@ export async function loadConfig(file?: string, trace?: boolean): Promise<Saddle
   }
 
   const defaultJson = require(path.join(__dirname, '..', 'saddle.config.js'));
-  defaultJson.trace = trace === undefined ? false : trace;
+  const merged = mergeDeep(defaultJson, customJson);
 
-  return mergeDeep(defaultJson, customJson);
+  return {
+    ...merged,
+    ...trace === undefined ? {} : { trace }
+  };
 }
 
 async function fetchProvider(source: ProviderSource): Promise<HttpProvider | ganache.Provider | undefined> {

@@ -23,6 +23,17 @@ export interface Saddle {
   trace: (receipt: TransactionReceipt, options: TraceOptions) => Promise<any>
 }
 
+function allowUndefinedArgs(args: any[] | SendOptions, sendOptions?: SendOptions): [any[], SendOptions | undefined] {
+  if (!Array.isArray(args)) {
+    if (sendOptions !== undefined) {
+      throw new Error(`Args expected to be an array, got ${args}`);
+    }
+    return [[], args];
+  } else {
+    return [args, sendOptions]
+  }
+}
+
 export async function getSaddle(network, trace=false): Promise<Saddle> {
   const saddle_config = await loadConfig(undefined, trace);
   const network_config = await instantiateConfig(saddle_config, network);
@@ -41,7 +52,9 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     return await getContractAt(network_config.web3, contractName, saddle_config.trace, address, network_config.defaultOptions);
   }
 
-  async function deploy(contractName: string, args: any[], sendOptions?: SendOptions): Promise<Contract> {
+  async function deploy(contractName: string, args: any[] | SendOptions=[], sendOptions?: SendOptions): Promise<Contract> {
+    [args, sendOptions] = allowUndefinedArgs(args, sendOptions);
+
     let options = {
       ...network_config.defaultOptions,
       ...sendOptions
@@ -52,7 +65,9 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     return contract;
   }
 
-  async function deployFull(contractName: string, args: any[], sendOptions?: SendOptions, web3?: Web3 | undefined): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+  async function deployFull(contractName: string, args: any[] | SendOptions=[], sendOptions?: SendOptions, web3?: Web3 | undefined): Promise<{contract: Contract, receipt: TransactionReceipt}> {
+    [args, sendOptions] = allowUndefinedArgs(args, sendOptions);
+
     let options = {
       ...network_config.defaultOptions,
       ...sendOptions
@@ -61,7 +76,9 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, saddle_config.trace, network_config.defaultOptions, options);
   }
 
-  async function call(contract: Contract, method: string, args: any[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
+  async function call(contract: Contract, method: string, args: any[] | SendOptions=[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
+    [args, callOptions] = allowUndefinedArgs(args, callOptions);
+
     let options = {
       ...network_config.defaultOptions,
       ...callOptions
@@ -70,7 +87,9 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     return contract.methods[method](...args).call(options, blockNumber || null);
   }
 
-  async function send(contract: Contract, method: string, args: any[], sendOptions?: SendOptions): Promise<any> {
+  async function send(contract: Contract, method: string, args: any[] | SendOptions=[], sendOptions?: SendOptions): Promise<any> {
+    [args, sendOptions] = allowUndefinedArgs(args, sendOptions);
+
     let options = {
       ...network_config.defaultOptions,
       ...sendOptions

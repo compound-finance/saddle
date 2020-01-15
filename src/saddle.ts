@@ -18,8 +18,8 @@ export interface Saddle {
   deployFull: (contract: string, args: any[], sendOptions: any, web3?: Web3 | undefined) => Promise<{contract: Contract, receipt: TransactionReceipt}>
   abi: (contract: string) => Promise<AbiItem[]>
   web3: Web3
-  send: (sendable: any, sendOptions?: any) => Promise<any>
-  call: (callable: any, callOptions?: any) => Promise<any>
+  send: (contract: Contract, method: string, args: any[], sendOptions?: SendOptions) => Promise<any>
+  call: (contract: Contract, method: string, args: any[], sendOptions?: SendOptions) => Promise<any>
   trace: (receipt: TransactionReceipt, options: TraceOptions) => Promise<any>
 }
 
@@ -61,22 +61,22 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, saddle_config.trace, network_config.defaultOptions, options);
   }
 
-  async function call(contract: Contract, method: string, callOptions?: SendOptions, blockNumber?: number): Promise<any> {
+  async function call(contract: Contract, method: string, args: any[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
     let options = {
       ...network_config.defaultOptions,
       ...callOptions
     };
 
-    return contract.methods[method].call(options, blockNumber || null);
+    return contract.methods[method](...args).call(options, blockNumber || null);
   }
 
-  async function send(contract: Contract, method: string, sendOptions?: SendOptions): Promise<any> {
+  async function send(contract: Contract, method: string, args: any[], sendOptions?: SendOptions): Promise<any> {
     let options = {
       ...network_config.defaultOptions,
       ...sendOptions
     };
 
-    return contract.methods[method].send(options);
+    return contract.methods[method](...args).send(options);
   }
 
   async function abi(contract: string): Promise<AbiItem[]> {

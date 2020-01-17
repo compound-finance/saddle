@@ -127,7 +127,7 @@ async function fetchAccount(source: AccountSource, web3: Web3): Promise<string |
     }
   } else if ('file' in source) {
     try {
-      let privateKey = await readFile(source.file, 'utf8');
+      let privateKeys = await readFile(source.file, 'utf8');
       let account = web3.eth.accounts.wallet.add('0x' + privateKey.trim());
       return account.address;
     } catch (e) {
@@ -208,7 +208,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
 
   let artifactAdapter;
   if (config.trace) {
-    artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'contracts-trace.json', config.coverage_ignore); 
+    artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'contracts-trace.json', config.coverage_ignore);
   }
 
   const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, artifactAdapter, config);

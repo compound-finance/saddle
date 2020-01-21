@@ -9,7 +9,8 @@ import { buildTracer, TraceOptions } from './trace';
 
 export interface Saddle {
   account: string,
-  accounts: string[]
+  accounts: string[],
+  wallet_accounts: string[],
   saddle_config: SaddleConfig
   network_config: NetworkConfig
   getContract: (contractName: string, sendOptions: SendOptions) => Promise<Contract>
@@ -103,8 +104,9 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
   }
 
   return {
-    account: network_config.account,
+    account: network_config.default_account,
     accounts: await network_config.web3.eth.getAccounts(),
+    wallet_accounts: network_config.wallet_accounts,
     saddle_config: saddle_config,
     network_config: network_config,
     deploy: deploy,

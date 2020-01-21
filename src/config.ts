@@ -23,6 +23,11 @@ export interface SaddleWeb3Config {
   options: SendOptions
 }
 
+export interface AccountConfig {
+  default_account: string;
+  wallet_accounts: string[];
+}
+
 export interface SaddleNetworkConfig {
   providers: ProviderSource | ProviderSource[]
   web3: SaddleWeb3Config
@@ -59,7 +64,8 @@ export interface NetworkConfig {
   tests: string[]
   network: string
   web3: Web3
-  account: string
+  default_account: string,
+  wallet_accounts: string[],
   defaultOptions: SendOptions
   cov: CoverageSubprovider | undefined
   providerEngine: ProviderEngine | undefined
@@ -108,28 +114,30 @@ async function fetchProvider(source: ProviderSource): Promise<string | ganache.P
   }
 }
 
-async function fetchAccount(source: AccountSource, web3: Web3): Promise<string | undefined> {
+async function fetchAccount(source: AccountSource, web3: Web3): Promise<AccountConfig | undefined> {
   if (!source) {
     return undefined;
   } else if ('unlocked' in source) {
     // We'll actually ping the provider 😬
     let accounts = await web3.eth.getAccounts();
     let index = Number(source.unlocked);
-
-    return accounts[index];
+    return {default_account: accounts[index], wallet_accounts: []};
   } else if ('env' in source) {
     let privateKey = process.env[source.env];
     if ( privateKey )   {
       let account = web3.eth.accounts.wallet.add(privateKey);
-      return account.address;
+      return {default_account: account.address, wallet_accounts: []};
     } else {
       return undefined;
     }
   } else if ('file' in source) {
     try {
-      let privateKeys = await readFile(source.file, 'utf8');
-      let account = web3.eth.accounts.wallet.add('0x' + privateKey.trim());
-      return account.address;
+      let privateKeys = (await readFile(source.file, 'utf8')).split('\n');
+      const wallet_accounts = privateKeys.filter(key => !!key.trim()).map((key) => {
+        const wallet = web3.eth.accounts.wallet.add('0x' + key);
+        return wallet.address;
+      });
+      return {default_account: wallet_accounts[0], wallet_accounts: wallet_accounts};
     } catch (e) {
       return undefined;
     }
@@ -146,7 +154,7 @@ async function fetchNumeric(source: NumericSource): Promise<number | undefined> 
   }
 }
 
-async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[], web3Config: SaddleWeb3Config, artifactAdapter: SaddleArtifactAdapter | undefined, config: SaddleConfig): Promise<{account: string, web3: Web3, defaultOptions: SendOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
+async function fetchWeb3(providers: ProviderSource[], accountSource: AccountSource[], web3Config: SaddleWeb3Config, artifactAdapter: SaddleArtifactAdapter | undefined, config: SaddleConfig): Promise<{default_account: string, wallet_accounts: string[], web3: Web3, defaultOptions: SendOptions, cov: CoverageSubprovider | undefined, providerEngine: ProviderEngine | undefined}> {
   let provider = await findValidConfig(providers, fetchProvider)
   let gas = await findValidConfig(web3Config.gas, fetchNumeric)
   let gasPrice = await findValidConfig(web3Config.gas_price, fetchNumeric);
@@ -177,7 +185,7 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
     web3 = new Web3(provider);
   }
 
-  let account = await findValidConfig(accounts, async (el) => {
+  let {default_account, wallet_accounts} = await findValidConfig(accountSource, async (el) => {
     return fetchAccount(el, web3);
   });
 
@@ -185,10 +193,10 @@ async function fetchWeb3(providers: ProviderSource[], accounts: AccountSource[],
     ...web3Config.options,
     gas,
     gasPrice,
-    from: account
+    from: default_account
   };
 
-  return {account, web3, defaultOptions, cov: coverageSubprovider, providerEngine};
+  return {default_account, wallet_accounts, web3, defaultOptions, cov: coverageSubprovider, providerEngine};
 }
 
 async function findValidConfig(options, fetcher) {
@@ -211,7 +219,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     artifactAdapter = new SaddleArtifactAdapter(config.build_dir, 'contracts-trace.json', config.coverage_ignore);
   }
 
-  const {account, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, artifactAdapter, config);
+  const {default_account, wallet_accounts, web3, defaultOptions, cov, providerEngine} = await fetchWeb3(arr(networkConfig.providers), arr(networkConfig.accounts), networkConfig.web3, artifactAdapter, config);
 
   return {
     solc: config.solc,
@@ -224,7 +232,8 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     tests: config.tests,
     network: network,
     web3,
-    account,
+    default_account,
+    wallet_accounts,
     defaultOptions,
     cov,
     providerEngine,

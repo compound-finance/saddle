@@ -1,5 +1,4 @@
 import Web3 from 'web3';
-import { HttpProvider } from 'web3-providers';
 import { SendOptions } from 'web3-eth-contract';
 import path from 'path';
 import ganache from 'ganache-core';

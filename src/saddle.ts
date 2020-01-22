@@ -46,11 +46,11 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
       ...sendOptions
     };
 
-    return await getContract(network_config.web3, contractName, saddle_config.trace, options);
+    return await getContract(network_config.web3, contractName, network_config.build_dir, saddle_config.trace, options);
   }
 
   async function getContractAtInt(contractName: string, address: string): Promise<Contract> {
-    return await getContractAt(network_config.web3, contractName, saddle_config.trace, address, network_config.defaultOptions);
+    return await getContractAt(network_config.web3, contractName, network_config.build_dir, saddle_config.trace, address, network_config.defaultOptions);
   }
 
   async function deploy(contractName: string, args: any[] | SendOptions=[], sendOptions?: SendOptions): Promise<Contract> {
@@ -61,7 +61,7 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
       ...sendOptions
     };
 
-    let { contract: contract } = await deployContract(network_config.web3, network_config.network, contractName, args, saddle_config.trace, network_config.defaultOptions, options);
+    let { contract: contract } = await deployContract(network_config.web3, network_config.network, contractName, args, network_config.build_dir, saddle_config.trace, network_config.defaultOptions, options);
 
     return contract;
   }
@@ -74,7 +74,7 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
       ...sendOptions
     };
 
-    return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, saddle_config.trace, network_config.defaultOptions, options);
+    return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, network_config.build_dir, saddle_config.trace, network_config.defaultOptions, options);
   }
 
   async function call(contract: Contract, method: string, args: any[] | SendOptions=[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
@@ -100,7 +100,7 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
   }
 
   async function abi(contract: string): Promise<AbiItem[]> {
-    return await getContractABI(contract, saddle_config.trace);
+    return await getContractABI(contract, network_config.build_dir, saddle_config.trace);
   }
 
   return {

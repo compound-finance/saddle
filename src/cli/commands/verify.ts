@@ -7,6 +7,7 @@ import {
 } from '../../contract';
 import { AbiCoder } from 'web3-eth-abi';
 import { info, debug, warn, error } from '../logger';
+import { getSaddle } from '../../saddle';
 
 interface DevDoc {
   author: string
@@ -183,11 +184,13 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
 export async function verify(network: string, apiKey: string, contractName: string, contractArgs: any[], verbose: number): Promise<void> {
   info(`Verifying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
-  let contractAddress = await loadContractAddress(contractName, network);
+  let saddle = await getSaddle(network);
+
+  let contractAddress = await loadContractAddress(contractName, saddle.network_config.build_dir, network, saddle.saddle_config.trace);
   if (!contractAddress) {
     throw new Error(`Cannot find contract ${contractName}- was it deployed to ${network}?`);
   }
-  let contractBuild = await getContractBuild(contractName, false);
+  let contractBuild = await getContractBuild(contractName, saddle.network_config.build_dir, saddle.saddle_config.trace);
   let metadata = JSON.parse((<any>contractBuild).metadata);
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');

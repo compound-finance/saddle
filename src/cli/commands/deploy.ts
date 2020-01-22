@@ -1,6 +1,6 @@
 import { Contract } from 'web3-eth-contract';
 import { TransactionReceipt } from 'web3-core';
-import { deployContract, saveContract } from '../../contract';
+import { deployContract, getNetworkFile, saveContract } from '../../contract';
 import { getSaddle } from '../../saddle';
 
 import { info, debug, warn, error } from '../logger';
@@ -16,12 +16,12 @@ export async function deploy(network: string, contractName: string, contractArgs
     ...saddle.network_config.defaultOptions,
     from: saddle.account
   };
-  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, trace, saddle.network_config.defaultOptions, sendOptions);
+  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, saddle.network_config.build_dir, trace, saddle.network_config.defaultOptions, sendOptions);
 
-  await saveContract(contractName, contract, network);
+  await saveContract(contractName, contract, saddle.network_config.build_dir, network, trace);
 
   info(`Deployed ${contractName} at ${contract.options.address}`, verbose);
-  info(`\nNote: see ${saddle.network_config.build_dir}/${network}.json for deployed contract addresses`, verbose);
+  info(`\nNote: see ${getNetworkFile(saddle.network_config.build_dir, network, trace)} for deployed contract addresses`, verbose);
 
   return {contract, receipt};
 }

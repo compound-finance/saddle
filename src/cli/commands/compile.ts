@@ -1,21 +1,21 @@
-import {promisify} from 'util';
-import {exec} from 'child_process';
-import {loadConfig} from '../../config';
-import {mkdirp, writeFile} from '../../file';
+import { promisify } from 'util';
+import { exec } from 'child_process';
+import { loadConfig } from '../../config';
+import { mkdirp, writeFile } from '../../file';
+import { getBuildFile } from '../../contract';
 
-import {info, debug, warn, error} from '../logger';
+import { info, debug, warn, error } from '../logger';
 
 export async function compile(trace: boolean, verbose: number): Promise<void> {
   let config = await loadConfig();
 
   const buildDir = config.build_dir;
-  let outFile, solc;
+  let outFile = getBuildFile(config.build_dir, config.trace);;
 
+  let solc;
   if (trace || config.trace) {
-    outFile = `${buildDir}/contracts-trace.json`;
     solc = `${config.solc} --combined-json bin,bin-runtime,abi,metadata,asm,srcmap,srcmap-runtime --metadata-literal --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
   } else {
-    outFile = `${buildDir}/contracts.json`;
     solc = `${config.solc} --combined-json bin,abi,metadata --metadata-literal --optimize ${config.solc_args.join(" ")} ${config.contracts}`;
   }
 

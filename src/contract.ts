@@ -15,7 +15,7 @@ interface ContractBuild {
 }
 
 export function getBuildFile(build_dir: string, trace?: boolean): string {
-  const fileName = trace ? `contract-trace.json` : `contract.json`;
+  const fileName = trace ? `contract-trace.json` : `contracts.json`;
   return path.join(path.resolve(process.cwd(), build_dir), fileName);
 }
 
@@ -28,10 +28,8 @@ export async function getContractBuild(name: string, build_dir: string, trace: b
   let buildFile = getBuildFile(build_dir, trace);
   let contracts = await readFile(buildFile, {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
-  console.log(name);
   let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {
     let [_, contractName] = pathContractName.split(":", 2);
-    console.log(contractName, name);
     return contractName == name;
   });
 

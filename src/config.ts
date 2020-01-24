@@ -93,7 +93,7 @@ export async function loadConfig(file?: string, trace?: boolean): Promise<Saddle
 
 async function fetchProvider(source: ProviderSource): Promise<string | ganache.Provider | undefined> {
   function maybeProvider(source: string | undefined) {
-    return source && source.length > 0 ? source.trim() : undefined;
+    return source && source.length > 0 ? source.trim(): undefined;
   }
 
   if (!source) {

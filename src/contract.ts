@@ -1,6 +1,5 @@
 import Web3 from 'web3';
 import { Contract, SendOptions } from 'web3-eth-contract';
-import newContract from 'web3-eth-contract';
 import { TransactionReceipt } from 'web3-core';
 import ganache from 'ganache-core';
 import { readFile, writeFile } from './file';
@@ -29,9 +28,10 @@ export async function getContractBuild(name: string, build_dir: string, trace: b
   let buildFile = getBuildFile(build_dir, trace);
   let contracts = await readFile(buildFile, {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
-
+  console.log(name);
   let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {
     let [_, contractName] = pathContractName.split(":", 2);
+    console.log(contractName, name);
     return contractName == name;
   });
 
@@ -54,10 +54,7 @@ export async function getContractABI(name: string, build_dir: string, trace: boo
 export async function getContract(web3: Web3, name: string, build_dir: string, trace: boolean, defaultOptions: SendOptions): Promise<Contract> {
   const contractBuild = await getContractBuild(name, build_dir, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
-  (<any>newContract).setProvider((<any>web3).currentProvider);
-  const contract = <Contract>(new (<any>newContract)(contractAbi));
-
-  return contract;
+  return new web3.eth.Contract(contractAbi, undefined, defaultOptions);;
 }
 
 export async function getContractAt(web3: Web3, name: string, build_dir: string, trace: boolean, address: string, defaultOptions: SendOptions): Promise<Contract> {
@@ -69,8 +66,7 @@ export async function getContractAt(web3: Web3, name: string, build_dir: string,
 export async function deployContract(web3: Web3, network: string, name: string, args: any[], build_dir: string, trace: boolean, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   const contractBuild = await getContractBuild(name, build_dir, trace);
   const contractAbi = JSON.parse(contractBuild.abi);
-  (<any>newContract).setProvider((<any>web3).currentProvider);
-  const web3Contract = <Contract>(new (<any>newContract)(contractAbi, undefined, defaultOptions));
+  const web3Contract = await getContract(web3, name, build_dir, trace, defaultOptions);
 
   const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
   let receiptResolveFn;

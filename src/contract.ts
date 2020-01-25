@@ -63,7 +63,6 @@ export async function getContractAt(web3: Web3, name: string, build_dir: string,
 
 export async function deployContract(web3: Web3, network: string, name: string, args: any[], build_dir: string, trace: boolean, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   const contractBuild = await getContractBuild(name, build_dir, trace);
-  const contractAbi = JSON.parse(contractBuild.abi);
   const web3Contract = await getContract(web3, name, build_dir, trace, defaultOptions);
 
   const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });

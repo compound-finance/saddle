@@ -15,7 +15,7 @@ interface ContractBuild {
 }
 
 export function getBuildFile(build_dir: string, trace?: boolean): string {
-  const fileName = trace ? `contract-trace.json` : `contracts.json`;
+  const fileName = trace ? `contracts-trace.json` : `contracts.json`;
   return path.join(path.resolve(process.cwd(), build_dir), fileName);
 }
 

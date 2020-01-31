@@ -4,6 +4,7 @@ import { getCli } from '../../cli';
 
 import { info, debug, warn, error } from '../logger';
 import { describeProvider } from '../../utils';
+import { getCompletions } from './completion';
 
 function lowerCase(str) {
   if (str === "") {
@@ -13,7 +14,7 @@ function lowerCase(str) {
   }
 }
 
-function addCommands(r, saddle, network, contracts) {
+function defineCommands(r, saddle, network, contracts) {
   r.defineCommand('deploy', {
     help: 'Deploy a given contract',
     action(name) {
@@ -25,10 +26,36 @@ function addCommands(r, saddle, network, contracts) {
           console.error(`Error: ${err}`);
         } else {
           console.log(output);
-          argv.deployedResult.then((res) => {
+          argv.deployResult.then((res) => {
             saddle.listContracts().then((contracts) => {
+              (<any>r).completer = getCompletions(r.originalCompleter, contracts);
               defineContracts(r, saddle, contracts);
-              addCommands(r, saddle, network, contracts);
+              defineCommands(r, saddle, network, contracts);
+
+              that.displayPrompt();
+            });
+          });
+        }
+      });
+    }
+  });
+
+  r.defineCommand('compile', {
+    help: 'Re-compile contracts',
+    action(name) {
+      this.clearBufferedCommand();
+      let that = this;
+
+      getCli().parse(`compile ${name}`, function (err, argv, output) {
+        if (err) {
+          console.error(`Error: ${err}`);
+        } else {
+          console.log(output);
+          argv.compileResult.then((res) => {
+            saddle.listContracts().then((contracts) => {
+              (<any>r).completer = getCompletions(r.originalCompleter, contracts);
+              defineContracts(r, saddle, contracts);
+              defineCommands(r, saddle, network, contracts);
 
               that.displayPrompt();
             });
@@ -89,16 +116,19 @@ export async function startConsole(network: string, trace: boolean, verbose: num
   info(`Saddle console on network ${network} ${describeProvider(saddle.web3.currentProvider)}${trace ? ' (Trace)' : ''}`, verbose);
   info(`Deployed ${network} contracts`, verbose);
 
-  let r = repl.start('> ');
-
   Object.entries(contracts).forEach(([contract, deployed]) => {
     if (deployed) {
       console.log(`\t${lowerCase(contract)}: ${deployed}`);
     }
-    r.context[contract] = contract; // Make strings known
   });
 
-  addCommands(r, saddle, network, contracts);
+  let r = repl.start({
+    prompt: '> '
+  });
+  (<any>r).originalCompleter = r.completer;
+  (<any>r).completer = getCompletions(r.completer, contracts);
+
+  defineCommands(r, saddle, network, contracts);
 
   Object.defineProperty(r.context, 'saddle', {
     configurable: false,

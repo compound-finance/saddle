@@ -43,7 +43,7 @@ export function getCli() {
           default: false
         });
     }, (argv) => {
-      compile(argv.trace, argv.verbose)
+      argv.compileResult = compile(argv.trace, argv.verbose);
     })
     .command('console', 'Starts a saddle console', (yargs) => {
       return yargs
@@ -62,13 +62,11 @@ export function getCli() {
           type: 'string'
         });
     }, (argv) => {
-      console.log("hereee");
       const contract: string = <string>argv.contract; // required
       const [,...contractArgsRaw] = argv._;
       const contractArgs = transformArgs(contractArgsRaw);
 
-      let result = deploy(argv.network, contract, contractArgs, false, argv.verbose);
-      argv.deployedResult = result;
+      argv.deployResult = deploy(argv.network, contract, contractArgs, false, argv.verbose);
     })
     .command('verify <apiKey> <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs

@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import { loadConfig, instantiateConfig, NetworkConfig, SaddleConfig } from './config';
-import { deployContract, getContract, getContractABI, getContractAt } from './contract';
+import { deployContract, getContract, getContractABI, getContractAt, listContracts } from './contract';
 import { AbiItem } from 'web3-utils';
 import { Contract, SendOptions } from 'web3-eth-contract';
 import { describeProvider } from './utils';
@@ -15,6 +15,7 @@ export interface Saddle {
   network_config: NetworkConfig
   getContract: (contractName: string, sendOptions: SendOptions) => Promise<Contract>
   getContractAt: (contractName: string, address: string) => Promise<Contract>
+  listContracts: () => Promise<{[contract: string]: string | null}>
   deploy: (contract: string, args: any[], sendOptions: any) => Promise<Contract>
   deployFull: (contract: string, args: any[], sendOptions: any, web3?: Web3 | undefined) => Promise<{contract: Contract, receipt: TransactionReceipt}>
   abi: (contract: string) => Promise<AbiItem[]>
@@ -51,6 +52,10 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
 
   async function getContractAtInt(contractName: string, address: string): Promise<Contract> {
     return await getContractAt(network_config.web3, contractName, network_config.build_dir, saddle_config.trace, address, network_config.defaultOptions);
+  }
+
+  async function listContractsInt(): Promise<{[contract: string]: string | null}> {
+    return await listContracts(network, network_config.build_dir, saddle_config.trace);
   }
 
   async function deploy(contractName: string, args: any[] | SendOptions=[], sendOptions?: SendOptions): Promise<Contract> {
@@ -117,6 +122,7 @@ export async function getSaddle(network, trace=false): Promise<Saddle> {
     call: call,
     getContract: getContractInt,
     getContractAt: getContractAtInt,
+    listContracts: listContractsInt,
     trace: await buildTracer(network_config)
   };
 }

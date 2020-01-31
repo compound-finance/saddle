@@ -44,6 +44,25 @@ export async function getContractBuild(name: string, build_dir: string, trace: b
   }
 }
 
+export async function listContracts(network: string, build_dir: string, trace: boolean): Promise<{[contract: string]: string | null}> {
+  let buildFile = getBuildFile(build_dir, trace);
+  let contractJson = await readFile(buildFile, {}, JSON.parse);
+
+  let networkFile = getNetworkFile(build_dir, network, trace);
+  let networkConfig = await readFile(networkFile, {}, JSON.parse);
+
+  let contractSub = contractJson['contracts'] || {};
+  let contractKeys = Object.keys(contractSub)
+  let contracts = contractKeys.map((k) => k.split(':')[1]);
+
+  return contracts.reduce((acc, el) => {
+    return {
+      ...acc,
+      [el]: networkConfig[el]
+    };
+  }, {});
+}
+
 export async function getContractABI(name: string, build_dir: string, trace: boolean): Promise<AbiItem[]> {
   const contractBuild = await getContractBuild(name, build_dir, trace);
   return JSON.parse(contractBuild.abi);

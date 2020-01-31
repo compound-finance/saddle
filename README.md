@@ -150,14 +150,33 @@ If you have new features or analysis you'd like to add to tracing, feel free to 
 
 Deploying a contract:
 
-```
+```bash
 npx saddle deploy MyContract Arg0 Arg1 -n rinkeby
 ```
 
 Verifying a contract on [Etherscan](https://etherscan.io):
 
-```
+```bash
 npx saddle verify "{Etherscan API Key}" MyContract Arg0 Arg1 -n rinkeby
+```
+
+You can also start a saddle console:
+
+```bash
+npx -n --experimental-repl-awaitsaddle console
+```
+
+```javascript
+Saddle console on network development Web3ProviderEngine
+> saddle
+Saddle {
+  ...
+}
+> .deploy Counter
+Deploying contract Counter with args []
+Deployed Counter at 0x81d2b78e483Ad6e9bc8e1a46F45434cFbad980B5
+> await counter.methods.count().call()
+0
 ```
 
 ## Configuration

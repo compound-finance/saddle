@@ -2,6 +2,7 @@
 
 import yargs from 'yargs';
 import {compile} from './cli/commands/compile';
+import {startConsole} from './cli/commands/console';
 import {deploy} from './cli/commands/deploy';
 import {verify} from './cli/commands/verify';
 import {init} from './cli/commands/init';
@@ -29,8 +30,8 @@ function transformArgs(contractArgsRaw) {
   });
 }
 
-if (require.main === module) {
-  yargs
+export function getCli() {
+  return yargs
     .option('network', {alias: 'n', description: 'Chosen network', type: 'string', default: 'development'})
     .count('verbose')
     .alias('v', 'verbose')
@@ -44,6 +45,16 @@ if (require.main === module) {
     }, (argv) => {
       compile(argv.trace, argv.verbose)
     })
+    .command('console', 'Starts a saddle console', (yargs) => {
+      return yargs
+        .option('trace', {
+          describe: 'Build contracts with detailed debug information',
+          type: 'boolean',
+          default: false
+        });
+    }, (argv) => {
+      startConsole(argv.network, argv.trace, argv.verbose);
+    })
     .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs
         .positional('contract', {
@@ -51,11 +62,13 @@ if (require.main === module) {
           type: 'string'
         });
     }, (argv) => {
+      console.log("hereee");
       const contract: string = <string>argv.contract; // required
       const [,...contractArgsRaw] = argv._;
       const contractArgs = transformArgs(contractArgsRaw);
 
-      deploy(argv.network, contract, contractArgs, false, argv.verbose);
+      let result = deploy(argv.network, contract, contractArgs, false, argv.verbose);
+      argv.deployedResult = result;
     })
     .command('verify <apiKey> <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs
@@ -88,6 +101,9 @@ if (require.main === module) {
     .alias('help', 'h')
     .demandCommand()
     .recommendCommands()
-    .strict()
-    .parse();
+    .strict();
+}
+
+if (require.main === module) {
+  getCli().parse();
 }

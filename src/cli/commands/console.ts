@@ -1,16 +1,37 @@
 import repl from 'repl';
 import { getSaddle } from '../../saddle';
 import { getCli } from '../../cli';
+import { Contract } from 'web3-eth-contract';
 
 import { info, debug, warn, error } from '../logger';
 import { describeProvider } from '../../utils';
-import { getCompletions } from './completion';
+import { getCompletions } from './console/completion';
+import { Readable } from 'stream';
 
 function lowerCase(str) {
   if (str === "") {
     return "";
   } else {
     return str[0].toLowerCase() + str.slice(1,);
+  }
+}
+
+async function getContracts(saddle) {
+  let contracts = await saddle.listContracts();
+  let contractInsts = await Object.entries(contracts).reduce(async (acc, [contract, address]) => {
+    if (address) {
+      return {
+        ... await acc,
+        [contract]: await saddle.getContractAt(contract, address)
+      };
+    } else {
+      return await acc;
+    }
+  }, <Promise<{[name: string]: Contract}>>{});
+
+  return {
+    contracts,
+    contractInsts
   }
 }
 
@@ -27,9 +48,9 @@ function defineCommands(r, saddle, network, contracts) {
         } else {
           console.log(output);
           argv.deployResult.then((res) => {
-            saddle.listContracts().then((contracts) => {
+            getContracts(saddle).then(({contracts, contractInsts}) => {
               (<any>r).completer = getCompletions(r.originalCompleter, contracts);
-              defineContracts(r, saddle, contracts);
+              defineContracts(r, saddle, contractInsts);
               defineCommands(r, saddle, network, contracts);
 
               that.displayPrompt();
@@ -52,13 +73,32 @@ function defineCommands(r, saddle, network, contracts) {
         } else {
           console.log(output);
           argv.compileResult.then((res) => {
-            saddle.listContracts().then((contracts) => {
+            getContracts(saddle).then(({contracts, contractInsts}) => {
               (<any>r).completer = getCompletions(r.originalCompleter, contracts);
-              defineContracts(r, saddle, contracts);
+              defineContracts(r, saddle, contractInsts);
               defineCommands(r, saddle, network, contracts);
 
               that.displayPrompt();
             });
+          });
+        }
+      });
+    }
+  });
+
+  r.defineCommand('contracts', {
+    help: 'Lists known contracts',
+    action(name) {
+      this.clearBufferedCommand();
+      let that = this;
+
+      getCli().parse(`contracts ${name}`, function (err, argv, output) {
+        if (err) {
+          console.error(`Error: ${err}`);
+        } else {
+          console.log(output);
+          argv.contractsResult.then((res) => {
+            that.displayPrompt();
           });
         }
       });
@@ -83,8 +123,17 @@ function defineCommands(r, saddle, network, contracts) {
     }
   });
 
-  r.defineCommand('contracts', {
-    help: 'Show given contracts',
+  r.defineCommand('from', {
+    help: 'Show default from address',
+    action(name) {
+      this.clearBufferedCommand();
+      console.log(`From: ${saddle.network_config.default_account}`);
+      this.displayPrompt();
+    }
+  });
+
+  r.defineCommand('deployed', {
+    help: 'Show given deployed contracts',
     action(name) {
       this.clearBufferedCommand();
       Object.entries(contracts).forEach(([contract, deployed]) => {
@@ -95,23 +144,19 @@ function defineCommands(r, saddle, network, contracts) {
   });
 }
 
-function defineContracts(r, saddle, contracts) {
-  Object.entries(contracts).forEach(([contract, address]) => {
-    if (address) {
-      saddle.getContractAt(contract, address).then((contractValue) => {
-        Object.defineProperty(r.context, lowerCase(contract), {
-          configurable: true,
-          enumerable: true,
-          value: contractValue
-        });
-      });
-    }
+function defineContracts(r, saddle, contractInsts) {
+  Object.entries(contractInsts).forEach(([contract, contractInst]) => {
+    Object.defineProperty(r.context, lowerCase(contract), {
+      configurable: true,
+      enumerable: true,
+      value: contractInst
+    });
   });
 }
 
-export async function startConsole(network: string, trace: boolean, verbose: number): Promise<void> {
+export async function startConsole(input: Readable | undefined, network: string, trace: boolean, verbose: number): Promise<void> {
   let saddle = await getSaddle(network);
-  let contracts = await saddle.listContracts();
+  let {contracts, contractInsts} = await getContracts(saddle);
 
   info(`Saddle console on network ${network} ${describeProvider(saddle.web3.currentProvider)}${trace ? ' (Trace)' : ''}`, verbose);
   info(`Deployed ${network} contracts`, verbose);
@@ -123,7 +168,10 @@ export async function startConsole(network: string, trace: boolean, verbose: num
   });
 
   let r = repl.start({
-    prompt: '> '
+    prompt: '> ',
+    input: input,
+    output: input ? process.stdout : undefined,
+    terminal: input ? false : undefined
   });
   (<any>r).originalCompleter = r.completer;
   (<any>r).completer = getCompletions(r.completer, contracts);
@@ -144,7 +192,7 @@ export async function startConsole(network: string, trace: boolean, verbose: num
     });
   });
 
-  defineContracts(r, saddle, contracts);
+  defineContracts(r, saddle, contractInsts);
 
   process.on('uncaughtException', () => console.log('Error'));
 }

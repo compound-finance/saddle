@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs';
-import {compile} from './cli/commands/compile';
-import {startConsole} from './cli/commands/console';
-import {deploy} from './cli/commands/deploy';
-import {verify} from './cli/commands/verify';
-import {init} from './cli/commands/init';
-import {test} from './cli/commands/test';
+import { compile } from './cli/commands/compile';
+import { startConsole } from './cli/commands/console';
+import { listContracts } from './cli/commands/contracts';
+import { deploy } from './cli/commands/deploy';
+import { verify } from './cli/commands/verify';
+import { init } from './cli/commands/init';
+import { test } from './cli/commands/test';
 export { getSaddle, Saddle } from './saddle';
+import { Readable, pipeline } from 'stream';
+import { createReadStream } from 'fs';
 
 function transformArgs(contractArgsRaw) {
   const transformers = {
@@ -51,9 +54,39 @@ export function getCli() {
           describe: 'Build contracts with detailed debug information',
           type: 'boolean',
           default: false
+        })
+        .option('script', {
+          describe: 'Run a given script instead of start a console',
+          type: 'string',
+          default: null,
+          alias: 's'
+        })
+        .option('eval', {
+          describe: 'Evaluate the given JavaScript code',
+          type: 'string',
+          default: null,
+          alias: 'e'
         });
     }, (argv) => {
-      startConsole(argv.network, argv.trace, argv.verbose);
+      let scriptArg: string | null = argv.script;
+      let evalArg: string | string[] | null = <string | string[] | null>argv.eval;
+
+      if (scriptArg && evalArg) {
+        throw new Error("Cannot use --eval and --script options together");
+      }
+
+      let input: Readable | undefined;
+      if (scriptArg !== null) {
+        input = createReadStream(scriptArg);
+      } else if (evalArg !== null) {
+        let codes: string[] = Array.isArray(evalArg) ? evalArg.map((e) => e + ';\n') : [ evalArg ];
+        input = Readable.from(codes);
+      }
+
+      startConsole(input, argv.network, argv.trace, argv.verbose);
+    })
+    .command('contracts', 'Display given contracts', (yargs) => yargs, (argv) => {
+      argv.contractsResult = listContracts(argv.network);
     })
     .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs

@@ -179,6 +179,14 @@ Deployed Counter at 0x81d2b78e483Ad6e9bc8e1a46F45434cFbad980B5
 0
 ```
 
+Available commands:
+  * `.compile` - Recompile and reload contracts
+  * `.contracts` - Show all contracts with constructor args
+  * `.deployed` - Show all contracts deployed on this network
+  * `.deploy <contract> <...args>` - Deploy a given contract
+  * `.network` - Show given network
+  * `.provider` - Show given provider
+
 You can recompile contracts in the repl by running `.compile`.
 
 ## Configuration

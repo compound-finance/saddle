@@ -16,12 +16,13 @@ export async function deploy(network: string, contractName: string, contractArgs
     ...saddle.network_config.defaultOptions,
     from: saddle.account
   };
-  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, saddle.network_config.build_dir, trace, saddle.network_config.defaultOptions, sendOptions);
-
-  await saveContract(contractName, contract, saddle.network_config.build_dir, network, trace);
+  let {contract, receipt} = await deployContract(saddle.web3, network, contractName, contractArgs, saddle.network_config, saddle.network_config.defaultOptions, sendOptions);
 
   info(`Deployed ${contractName} at ${contract.options.address}`, verbose);
-  info(`\nNote: see ${getNetworkFile(saddle.network_config.build_dir, network, trace)} for deployed contract addresses`, verbose);
+
+  await saveContract(contractName, contract, saddle.network_config);
+
+  info(`\nNote: see ${getNetworkFile(saddle.network_config)} for deployed contract addresses`, verbose);
 
   return {contract, receipt};
 }

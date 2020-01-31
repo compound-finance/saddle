@@ -186,11 +186,11 @@ export async function verify(network: string, apiKey: string, contractName: stri
 
   let saddle = await getSaddle(network);
 
-  let contractAddress = await loadContractAddress(contractName, saddle.network_config.build_dir, network, saddle.saddle_config.trace);
+  let contractAddress = await loadContractAddress(contractName, saddle.network_config);
   if (!contractAddress) {
     throw new Error(`Cannot find contract ${contractName}- was it deployed to ${network}?`);
   }
-  let contractBuild = await getContractBuild(contractName, saddle.network_config.build_dir, saddle.saddle_config.trace);
+  let contractBuild = await getContractBuild(contractName, saddle.saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');

@@ -9,6 +9,7 @@ import { CoverageSubprovider } from '@compound-finance/sol-coverage';
 import { GanacheSubprovider } from './ganache_subprovider';
 import { SaddleArtifactAdapter } from './saddle_artifact_adapter';
 const RpcSubprovider = require('web3-provider-engine/subproviders/rpc.js')
+import * as fs from 'fs';
 
 type NumericSource = { env: string } | { default: string }
 type ProviderSource = { env: string } | { file: string } | { http: string } | { ganache: object }
@@ -44,6 +45,11 @@ export interface SaddleConfig {
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
   trace: boolean
+  get_build_file?: () => string
+  read_build_file?: () => Promise<object>
+  get_network_file?: (string) => string
+  read_network_file?: (string) => Promise<object>
+  write_network_file?: (string, object) => Promise<void>
 }
 
 export interface Web3Config {
@@ -62,6 +68,12 @@ export interface NetworkConfig {
   contracts: string
   tests: string[]
   network: string
+  trace: boolean
+  get_build_file?: () => string
+  read_build_file?: () => Promise<object>
+  get_network_file?: (string) => string
+  read_network_file?: (string) => Promise<object>
+  write_network_file?: (string, object) => Promise<void>
   web3: Web3
   default_account: string,
   wallet_accounts: string[],
@@ -73,12 +85,13 @@ export interface NetworkConfig {
 
 export async function loadConfig(file?: string, trace?: boolean): Promise<SaddleConfig> {
   let customJson = {};
+  const configFile = file || path.join(process.cwd(), 'saddle.config.js')
 
   try {
-    customJson = require(file || path.join(process.cwd(), 'saddle.config.js'));
+    customJson = require(configFile);
   } catch (e) {
-    if (!!file) {
-      throw new Error(`Cannot read saddle JSON: ${file}`);
+    if (fs.existsSync(configFile)) {
+      throw new Error(`Cannot read saddle JSON: ${configFile}: ${e}`);
     }
   }
 
@@ -230,6 +243,12 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     contracts: config.contracts,
     tests: config.tests,
     network: network,
+    trace: config.trace,
+    get_build_file: config.get_build_file,
+    read_build_file: config.read_build_file,
+    get_network_file: config.get_network_file,
+    read_network_file: config.read_network_file,
+    write_network_file: config.write_network_file,
     web3,
     default_account,
     wallet_accounts,

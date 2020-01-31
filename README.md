@@ -163,7 +163,7 @@ npx saddle verify "{Etherscan API Key}" MyContract Arg0 Arg1 -n rinkeby
 You can also start a saddle console:
 
 ```bash
-npx -n --experimental-repl-awaitsaddle console
+npx -n --experimental-repl-await saddle console
 ```
 
 ```javascript
@@ -178,6 +178,8 @@ Deployed Counter at 0x81d2b78e483Ad6e9bc8e1a46F45434cFbad980B5
 > await counter.methods.count().call()
 0
 ```
+
+You can recompile contracts in the repl by running `.compile`.
 
 ## Configuration
 

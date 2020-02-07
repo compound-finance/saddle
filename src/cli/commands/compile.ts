@@ -8,7 +8,7 @@ import { getBuildFile } from '../../contract';
 import { info, debug, warn, error } from '../logger';
 
 export async function compile(trace: boolean, verbose: number): Promise<void> {
-  let config = await loadConfig();
+  let config = await loadConfig(undefined, trace);
 
   let outFile = getBuildFile(config);
   let outDir = path.basename(config.build_dir);

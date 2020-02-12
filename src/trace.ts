@@ -4,6 +4,8 @@ import { TransactionReceipt } from 'web3-core';
 import { stripHexPrefix } from 'ethereumjs-util';
 import chalk from 'chalk';
 import Web3 from 'web3';
+import { Log } from './trace/log';
+import { trimZero } from './trace/utils';
 import { TraceInfo, augmentLogs } from './trace/descriptor';
 
 interface Trace {
@@ -31,6 +33,12 @@ export interface TraceOptions {
   postFilter?: undefined | ((log: StructLog) => boolean),
   execLog?: undefined | ((log: StructLog, info: TraceInfo) => Promise<void>)
   exec?: undefined | ((logs: StructLog[], info: TraceInfo) => Promise<void>)
+}
+
+interface ContractTraceComponents {
+  address: string,
+  pcToSourceRange?: any
+  inverted?: any
 }
 
 function rpc(web3, request) {
@@ -82,12 +90,18 @@ export async function buildTracer(network_config: NetworkConfig) {
     traceCollector = new TraceCollector(network_config.artifactAdapter, true, <any>null);
   }
 
-  return async function trace(receipt: TransactionReceipt, traceOpts: TraceOptions): Promise<any> {
+  let contractTraceComponentsCache = {};
+
+  // Note: this function will memoize its input
+  async function getContractTraceComponents(address, isContractCreation=false): Promise<ContractTraceComponents> {
+    if (isContractCreation && address in contractTraceComponentsCache) {
+      return contractTraceComponentsCache[address];
+    }
+
     let pcToSourceRange, inverted;
     if (traceCollector) {
-      let address = receipt.contractAddress || receipt.to;
-      let isContractCreation = receipt.contractAddress !== null;
-      let bytecode = await network_config.web3.eth.getCode(address);
+      let checksumAddress = network_config.web3.utils.toChecksumAddress(address);
+      let bytecode = await network_config.web3.eth.getCode(checksumAddress);
       let contractData = await traceCollector.getContractDataByTraceInfoIfExistsAsync(address, bytecode, isContractCreation);
 
       if (!contractData) {
@@ -96,14 +110,30 @@ export async function buildTracer(network_config: NetworkConfig) {
 
       const bytecodeHex = stripHexPrefix(bytecode);
       const sourceMap = isContractCreation ? contractData.sourceMap : contractData.sourceMapRuntime;
-      pcToSourceRange = parseSourceMap(contractData.sourceCodes, sourceMap, bytecodeHex, contractData.sources);
-      inverted = Object.entries(contractData.sources).reduce((acc, [id, name]) => {
+      let pcToSourceRange = parseSourceMap(contractData.sourceCodes, sourceMap, bytecodeHex, contractData.sources);
+      let inverted = Object.entries(contractData.sources).reduce((acc, [id, name]) => {
         return {
           ...acc,
           [<string>name]: contractData.sourceCodes[<string>id].split("\n")
         };
       }, {});
-    };
+
+      let traceComponents = { address, pcToSourceRange, inverted };
+
+      if (!isContractCreation) {
+        contractTraceComponentsCache[address] = traceComponents;
+      }
+
+      return traceComponents;
+    } else {
+      return { address, pcToSourceRange: null, inverted: null };
+    }
+  }
+
+  return async function trace(receipt: TransactionReceipt, traceOpts: TraceOptions): Promise<any> {
+    let traceComponents =
+      await getContractTraceComponents(receipt.contractAddress || receipt.to, receipt.contractAddress !== null);
+      let { address, pcToSourceRange, inverted } = traceComponents;
 
     let trace = await traceTransaction(network_config.web3, receipt.transactionHash, {});
 
@@ -115,16 +145,41 @@ export async function buildTracer(network_config: NetworkConfig) {
     let filteredLogs = traceOpts.preFilter ? augmentedLogs.filter(traceOpts.preFilter) : augmentedLogs;
 
     if (pcToSourceRange && inverted) {
-      filteredLogs = filteredLogs.map((log, i) => {
-        let offset = pcToSourceRange[log.pc];
-        let sourceFile = inverted[offset.fileName];
+      ({logs: filteredLogs} = await filteredLogs.reduce(async (acc, log, i) => {
+        let { logs, traceCompStack } = await acc;
+        let { address, pcToSourceRange, inverted } = traceCompStack[0] || {};
 
-        let {source, sourceLine} = getSource(offset, sourceFile);
+        let callInput = {
+          DELEGATECALL: 4,
+          CALL: 5,
+          CALLCODE: 5, // not sure this is right for CALLCODE
+          STATICCALL: 4
+        };
 
-        log.setSource(source, sourceLine);
+        if (callInput[log.op]) {
+          let input = log.inputs[callInput[log.op]];
+          traceCompStack = [
+            await getContractTraceComponents('0x' + trimZero(input))
+            , ...traceCompStack
+          ];
+        } else if (log.op === 'RETURN') {
+          traceCompStack = traceCompStack.slice(1,);
+        }
 
-        return log;
-      });
+        log.setContract(address, traceCompStack.length - 1);
+
+        let offset = pcToSourceRange ? pcToSourceRange[log.pc] : undefined;
+        if (offset) {
+          let sourceFile = inverted[offset.fileName];
+          let {source, sourceLine} = getSource(offset, sourceFile);
+          log.setSource(source, sourceLine);
+        }
+
+        return {
+          logs: [...logs, log],
+          traceCompStack
+        };
+      }, Promise.resolve({ logs: <Log[]>[], traceCompStack: [traceComponents] })));
     }
 
     let postFilteredLogs = traceOpts.postFilter ? filteredLogs.filter(traceOpts.postFilter) : filteredLogs;

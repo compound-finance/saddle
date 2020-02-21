@@ -1,13 +1,13 @@
-import request from 'request';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
   getContractBuild,
   loadContractAddress
 } from '../../contract';
-import { AbiCoder } from 'web3-eth-abi';
+import AbiCoder from 'web3-eth-abi';
 import { info, debug, warn, error } from '../logger';
 import { getSaddle } from '../../saddle';
+import { Result, getEtherscanApiUrl, get, post } from './etherscan';
 
 interface DevDoc {
   author: string
@@ -18,52 +18,6 @@ interface DevDoc {
 interface UserDoc {
   methods: object
   notice: string
-}
-
-function getUrl(network: string): string {
-  let host = {
-    kovan: 'api-kovan.etherscan.io',
-    rinkeby: 'api-rinkeby.etherscan.io',
-    ropsten: 'api-ropsten.etherscan.io',
-    goerli: 'api-goerli.etherscan.io',
-    mainnet: 'api.etherscan.io'
-  }[network];
-
-  if (!host) {
-    throw new Error(`Unknown etherscan API host for network ${network}`);
-  }
-
-  return `https://${host}/api`;
-}
-
-function post(url, data): Promise<object> {
-  return new Promise((resolve, reject) => {
-    request.post(url, {form: data}, (err, httpResponse, body) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(JSON.parse(body));
-      }
-    });
-  });
-}
-
-function get(url, data): Promise<object> {
-  return new Promise((resolve, reject) => {
-    request.get(url, {form: data}, (err, httpResponse, body) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(JSON.parse(body));
-      }
-    });
-  });
-}
-
-interface Result {
-  status: string
-  message: string
-  result: string
 }
 
 async function sleep(timeout): Promise<void> {
@@ -177,11 +131,11 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   if (!constructorAbi) {
     return "0x";
   } else {
-    return new AbiCoder().encodeParameters(constructorAbi.inputs, contractArgs);
+    return (<any>AbiCoder).encodeParameters(constructorAbi.inputs, contractArgs);
   }
 }
 
-export async function verify(network: string, apiKey: string, contractName: string, contractArgs: any[], verbose: number): Promise<void> {
+export async function verify(network: string, apiKey: string, contractName: string, contractArgs: any[], optimizations: number, verbose: number): Promise<void> {
   info(`Verifying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let saddle = await getSaddle(network);
@@ -195,7 +149,7 @@ export async function verify(network: string, apiKey: string, contractName: stri
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
   let constructorAbi = getConstructorABI(JSON.parse(contractBuild.abi), contractArgs);
-  let url = getUrl(network);
+  let url = getEtherscanApiUrl(network);
 
   const verifyData: object = {
     apikey: apiKey,
@@ -205,8 +159,8 @@ export async function verify(network: string, apiKey: string, contractName: stri
     sourceCode: sourceCode,
     contractname: contractName,
     compilerversion: `v${compilerVersion}`,
-    optimizationUsed: '1',
-    runs: '200',
+    optimizationUsed: optimizations > 0 ? '1' : '0',
+    runs: optimizations > 0 ? optimizations.toString() : '',
     constructorArguements: constructorAbi.slice(2)
   };
 

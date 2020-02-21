@@ -4,6 +4,7 @@ import yargs from 'yargs';
 import { compile } from './cli/commands/compile';
 import { startConsole } from './cli/commands/console';
 import { listContracts } from './cli/commands/contracts';
+import { loadContract } from './cli/commands/import';
 import { deploy } from './cli/commands/deploy';
 import { verify } from './cli/commands/verify';
 import { init } from './cli/commands/init';
@@ -18,7 +19,7 @@ function transformArgs(contractArgsRaw) {
   };
 
   return contractArgsRaw.map((arg) => {
-    let [raw, type] = arg.split(':', 2);
+    let [raw, type] = Number.isInteger(arg) ? [arg, 'number'] : arg.split(':', 2);
 
     // Custom array type
     if (!type && arg.includes(',')) {
@@ -101,6 +102,27 @@ export function getCli() {
 
       argv.deployResult = deploy(argv.network, contract, contractArgs, false, argv.verbose);
     })
+    .command('import <address>', 'Imports a contract from remote source', (yargs) => {
+      return yargs
+        .positional('address', {
+          describe: 'Address of contract to read',
+          type: 'string'
+        })
+        .option('source', {
+          describe: 'Source to load contract from (e.g. etherscan)',
+          type: 'string',
+          default: 'etherscan'
+        })
+        .option('outdir', {
+          describe: 'Directory to place build file',
+          type: 'string',
+          default: './remote'
+        });
+    }, (argv) => {
+      const address: string = <string>argv.address; // required
+
+      loadContract(argv.source, argv.network, address, argv.outdir, argv.verbose);
+    })
     .command('verify <apiKey> <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs
         .positional('apiKey', {
@@ -110,14 +132,20 @@ export function getCli() {
         .positional('contract', {
           describe: 'Contract to deploy (e.g. myContract.sol)',
           type: 'string'
+        })
+        .option('optimizations', {
+          describe: 'Optimizations used in compilation (0=off)',
+          type: 'number',
+          default: 200
         });
     }, (argv) => {
       const apiKey: string = <string>argv.apiKey; // required
       const contract: string = <string>argv.contract; // required
+      const optimizations: number = <number>argv.optimizations; // required
       const [,...contractArgsRaw] = argv._;
       const contractArgs = transformArgs(contractArgsRaw);
 
-      verify(argv.network, apiKey, contract, contractArgs, argv.verbose);
+      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

@@ -12,6 +12,8 @@ export class Log {
   pc: number
   stack: string[]
   storage: {[key: string]: string}
+  contract?: string
+  delegateCallDepth?: number
   source?: string
   sourceLine?: string
   desc: string
@@ -38,6 +40,11 @@ export class Log {
   public setSource(source: string, sourceLine: string) {
     this.source = source;
     this.sourceLine = sourceLine;
+  }
+
+  public setContract(contract: string, delegateCallDepth: number) {
+    this.contract = contract;
+    this.delegateCallDepth = delegateCallDepth;
   }
 
   public show() {

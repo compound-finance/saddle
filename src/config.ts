@@ -100,7 +100,7 @@ export async function loadConfig(file?: string, trace?: boolean): Promise<Saddle
 
   return {
     ...merged,
-    ...trace === undefined ? {} : { trace }
+    ...trace === true ? { trace } : {}
   };
 }
 

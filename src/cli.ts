@@ -137,15 +137,25 @@ export function getCli() {
           describe: 'Optimizations used in compilation (0=off)',
           type: 'number',
           default: 200
+        })
+        .option('source', {
+          describe: 'Name of contract to read source from',
+          type: 'string'
+        })
+        .option('raw', {
+          alias: 'r',
+          describe: 'Args should be passed-through without transformation',
+          type: 'boolean',
+          default: false
         });
     }, (argv) => {
       const apiKey: string = <string>argv.apiKey; // required
       const contract: string = <string>argv.contract; // required
       const optimizations: number = <number>argv.optimizations; // required
       const [,...contractArgsRaw] = argv._;
-      const contractArgs = transformArgs(contractArgsRaw);
+      const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.verbose);
+      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.source, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

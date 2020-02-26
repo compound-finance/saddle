@@ -39,6 +39,7 @@ export interface SaddleConfig {
   solc_args: string[]
   solc_shell_args: object
   build_dir: string
+  extra_build_files: string[]
   coverage_dir: string
   coverage_ignore: string[]
   contracts: string
@@ -63,6 +64,7 @@ export interface NetworkConfig {
   solc_args: string[]
   solc_shell_args: object
   build_dir: string
+  extra_build_files: string[]
   coverage_dir: string
   coverage_ignore: string[]
   contracts: string
@@ -238,6 +240,7 @@ export async function instantiateConfig(config: SaddleConfig, network: string): 
     solc_args: config.solc_args,
     solc_shell_args: config.solc_shell_args,
     build_dir: config.build_dir,
+    extra_build_files: config.extra_build_files,
     coverage_dir: config.coverage_dir,
     coverage_ignore: config.coverage_ignore,
     contracts: config.contracts,

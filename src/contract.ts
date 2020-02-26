@@ -6,6 +6,7 @@ import { readFile, writeFile } from './file';
 import { AbiItem } from 'web3-utils';
 import * as path from 'path';
 import { SaddleConfig, NetworkConfig } from './config';
+import FastGlob from 'fast-glob';
 
 interface ContractBuild {
   path: string
@@ -29,7 +30,21 @@ export async function readBuildFile(saddle_config: SaddleConfig | NetworkConfig)
     return await saddle_config.read_build_file();
   } else {
     let buildFile = await getBuildFile(saddle_config);
-    return await readFile(buildFile, {}, JSON.parse);
+    let initialBuild = await readFile(buildFile, {}, JSON.parse);
+    let extraBuildFiles = await FastGlob(saddle_config.extra_build_files);
+
+    return await extraBuildFiles.reduce(async (accP, el) => {
+      let acc = await accP;
+      let newBuild = await readFile(el, {}, JSON.parse);
+
+      return {
+        ...acc,
+        contracts: {
+          ...newBuild.contracts, // Note: we only merge in the sub-contracts
+          ...acc.contracts
+        }
+      }
+    }, Promise.resolve(initialBuild));
   }
 }
 

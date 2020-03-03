@@ -144,7 +144,6 @@ export async function buildTracer(network_config: NetworkConfig) {
     }
 
     let { logs: augmentedLogs, info: info } = augmentLogs(trace.structLogs, traceOpts.constants || {});
-    let callLog = {gasRemaining: 0, index: 0};
     let filteredLogs = traceOpts.preFilter ? augmentedLogs.filter(traceOpts.preFilter) : augmentedLogs;
     if (pcToSourceRange && inverted) {
       ({logs: filteredLogs} = await filteredLogs.reduce(async (acc, log, i, allLogs) => {

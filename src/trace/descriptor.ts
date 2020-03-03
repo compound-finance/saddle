@@ -36,17 +36,7 @@ export function augmentLogs(logs: StructLog[], constants: object): { logs: Log[]
     const nextStack = nextLog ? nextLog.stack : undefined;
 
     let { extended, info: nInfo } = describeOperation(log, nextStack || [], info);
-    let nLog: Log = new Log(log, extended, info.lastLog);
-
-    // if (nextLog != undefined) {
-    //   nLog.gasCost = nextLog.gasCost;
-    // }
-
-    // if (["STATICCALL", "DELEGATECALL", "CALL"].includes(log.op)) {
-    //   nLog.gasCost = 700;
-    // } else if (log.op == "RETURN") {
-    //   nLog.gasCost = 0;
-    // }
+    const nLog: Log = new Log(log, extended, info.lastLog);
 
     return {
       logs: [...logs, nLog],
@@ -55,6 +45,5 @@ export function augmentLogs(logs: StructLog[], constants: object): { logs: Log[]
         lastLog: nLog
       }
     };
-
   }, <{logs: Log[], info: TraceInfo}>{logs: [], info: { inv, sha: {} }});
 }

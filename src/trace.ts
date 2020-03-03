@@ -39,8 +39,8 @@ interface ContractTraceComponents {
   address: string,
   pcToSourceRange?: any
   inverted?: any,
-  // gasRemaining?: number,
-  // logIndex?: number
+  gasRemaining?: number,
+  callIndex?: number
 }
 
 function rpc(web3, request) {
@@ -158,27 +158,27 @@ export async function buildTracer(network_config: NetworkConfig) {
           STATICCALL: 4
         };
 
-        if (callInput[log.op]) {
+        const nextLog = allLogs[i + 1];
+        if (!nextLog) {
+          // the last opcode in a tx is a STOP or RETURN, which has no cost
+          log.gasCost = 0;
+        } else if (callInput[log.op]) {
           let input = log.inputs[callInput[log.op]];
+          let traceComponents = await getContractTraceComponents('0x' + trimZero(input));
           traceCompStack = [
-            await getContractTraceComponents('0x' + trimZero(input))
+            {...traceComponents, gasRemaining: nextLog.gasCost, callIndex: i}
             , ...traceCompStack
           ];
-          callLog.gasRemaining = allLogs[i + 1].gasCost;
-          callLog.index = i;
         } else if (log.op === 'RETURN') {
-          if (allLogs[i+1]) {
-            traceCompStack = traceCompStack.slice(1,);
-            const callCost = callLog.gasRemaining + allLogs[i + 1].gasCost;
-            console.log("next", allLogs[i + 1].gasCost, "COST", callCost, i);
-            logs[callLog.index].gasCost = callCost;
-            log.gasCost = 0;
-          }
+          // set the gas cost of the previous call to the difference in gas between the return opcode and the call opcode
+          // a RETURN code before the end of the tx means we must be in an externall call, so we'll have gasCost and gasRemaining
+          logs[traceCompStack[0].callIndex!].gasCost = traceCompStack[0].gasRemaining! + nextLog.gasCost;
+          // RETURN itself is 0 cost
+          log.gasCost = 0;
+          traceCompStack = traceCompStack.slice(1,);
         } else {
-          const nextLog = allLogs[i + 1];
-          if (nextLog != undefined) {
-           log.gasCost = nextLog.gasCost;
-          }
+          // debug_traceTransaction's gasCosts are off by one
+          log.gasCost = nextLog.gasCost;
         }
 
         log.setContract(address, traceCompStack.length - 1);
@@ -190,14 +190,12 @@ export async function buildTracer(network_config: NetworkConfig) {
           log.setSource(source, sourceLine);
         }
 
-
         return {
           logs: [...logs, log],
           traceCompStack
         };
       }, Promise.resolve({ logs: <Log[]>[], traceCompStack: [traceComponents] })));
     }
-    console.log("LEN", filteredLogs.length);
 
     let postFilteredLogs = traceOpts.postFilter ? filteredLogs.filter(traceOpts.postFilter) : filteredLogs;
 

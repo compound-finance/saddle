@@ -15,15 +15,19 @@ import { createReadStream } from 'fs';
 
 function transformArgs(contractArgsRaw) {
   const transformers = {
-    array: (arg) => arg.split(',').filter(x => x.length > 0)
+    array: (arg) => arg.split(',').filter(x => x.length > 0),
+    address: (arg) => arg.toString()
   };
 
   return contractArgsRaw.map((arg) => {
-    let [raw, type] = Number.isInteger(arg) ? [arg, 'number'] : arg.split(':', 2);
+    let [raw, type] = arg.split(':', 2);
 
-    // Custom array type
-    if (!type && arg.includes(',')) {
-      type = 'array';
+    if (!type) {
+      if (Number.isInteger(arg)) {
+        type = 'number';
+      } else if (arg.includes(',')) {
+        type = 'array';
+      }
     }
 
     if (type && transformers[type]) {

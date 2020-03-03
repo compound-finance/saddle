@@ -38,7 +38,9 @@ export interface TraceOptions {
 interface ContractTraceComponents {
   address: string,
   pcToSourceRange?: any
-  inverted?: any
+  inverted?: any,
+  // gasRemaining?: number,
+  // logIndex?: number
 }
 
 function rpc(web3, request) {
@@ -133,7 +135,7 @@ export async function buildTracer(network_config: NetworkConfig) {
   return async function trace(receipt: TransactionReceipt, traceOpts: TraceOptions): Promise<any> {
     let traceComponents =
       await getContractTraceComponents(receipt.contractAddress || receipt.to, receipt.contractAddress !== null);
-      let { address, pcToSourceRange, inverted } = traceComponents;
+    let { address, pcToSourceRange, inverted } = traceComponents;
 
     let trace = await traceTransaction(network_config.web3, receipt.transactionHash, {});
 
@@ -142,10 +144,10 @@ export async function buildTracer(network_config: NetworkConfig) {
     }
 
     let { logs: augmentedLogs, info: info } = augmentLogs(trace.structLogs, traceOpts.constants || {});
+    let callLog = {gasRemaining: 0, index: 0};
     let filteredLogs = traceOpts.preFilter ? augmentedLogs.filter(traceOpts.preFilter) : augmentedLogs;
-
     if (pcToSourceRange && inverted) {
-      ({logs: filteredLogs} = await filteredLogs.reduce(async (acc, log, i) => {
+      ({logs: filteredLogs} = await filteredLogs.reduce(async (acc, log, i, allLogs) => {
         let { logs, traceCompStack } = await acc;
         let { address, pcToSourceRange, inverted } = traceCompStack[0] || {};
 
@@ -162,8 +164,21 @@ export async function buildTracer(network_config: NetworkConfig) {
             await getContractTraceComponents('0x' + trimZero(input))
             , ...traceCompStack
           ];
+          callLog.gasRemaining = allLogs[i + 1].gasCost;
+          callLog.index = i;
         } else if (log.op === 'RETURN') {
-          traceCompStack = traceCompStack.slice(1,);
+          if (allLogs[i+1]) {
+            traceCompStack = traceCompStack.slice(1,);
+            const callCost = callLog.gasRemaining + allLogs[i + 1].gasCost;
+            console.log("next", allLogs[i + 1].gasCost, "COST", callCost, i);
+            logs[callLog.index].gasCost = callCost;
+            log.gasCost = 0;
+          }
+        } else {
+          const nextLog = allLogs[i + 1];
+          if (nextLog != undefined) {
+           log.gasCost = nextLog.gasCost;
+          }
         }
 
         log.setContract(address, traceCompStack.length - 1);
@@ -175,12 +190,14 @@ export async function buildTracer(network_config: NetworkConfig) {
           log.setSource(source, sourceLine);
         }
 
+
         return {
           logs: [...logs, log],
           traceCompStack
         };
       }, Promise.resolve({ logs: <Log[]>[], traceCompStack: [traceComponents] })));
     }
+    console.log("LEN", filteredLogs.length);
 
     let postFilteredLogs = traceOpts.postFilter ? filteredLogs.filter(traceOpts.postFilter) : filteredLogs;
 

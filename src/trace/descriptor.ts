@@ -38,15 +38,15 @@ export function augmentLogs(logs: StructLog[], constants: object): { logs: Log[]
     let { extended, info: nInfo } = describeOperation(log, nextStack || [], info);
     let nLog: Log = new Log(log, extended, info.lastLog);
 
-    if (nextLog != undefined) {
-      nLog.gasCost = nextLog.gasCost;
-    }
+    // if (nextLog != undefined) {
+    //   nLog.gasCost = nextLog.gasCost;
+    // }
 
-    if (["STATICCALL", "DELEGATECALL", "CALL"].includes(log.op)) {
-      nLog.gasCost = 700;
-    } else if (log.op == "RETURN") {
-      nLog.gasCost = 0;
-    }
+    // if (["STATICCALL", "DELEGATECALL", "CALL"].includes(log.op)) {
+    //   nLog.gasCost = 700;
+    // } else if (log.op == "RETURN") {
+    //   nLog.gasCost = 0;
+    // }
 
     return {
       logs: [...logs, nLog],

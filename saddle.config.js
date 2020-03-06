@@ -6,6 +6,7 @@ module.exports = {
     maxBuffer: 1024 * 5000                              // https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
   },
   build_dir: ".build",                                  // Directory to place built contracts
+  extra_build_files: [],                                // Additional build files to deep merge
   coverage_dir: "coverage",                             // Directory to place coverage files
   coverage_ignore: [],                                  // List of files to ignore for coverage
   contracts: "contracts/*.sol",                         // Glob to match contract files

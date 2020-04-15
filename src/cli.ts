@@ -15,15 +15,19 @@ import { createReadStream } from 'fs';
 
 function transformArgs(contractArgsRaw) {
   const transformers = {
-    array: (arg) => arg.split(',').filter(x => x.length > 0)
+    array: (arg) => arg.split(',').filter(x => x.length > 0),
+    address: (arg) => arg.toString()
   };
 
   return contractArgsRaw.map((arg) => {
-    let [raw, type] = Number.isInteger(arg) ? [arg, 'number'] : arg.split(':', 2);
+    let [raw, type] = arg.split(':', 2);
 
-    // Custom array type
-    if (!type && arg.includes(',')) {
-      type = 'array';
+    if (!type) {
+      if (Number.isInteger(arg)) {
+        type = 'number';
+      } else if (arg.includes(',')) {
+        type = 'array';
+      }
     }
 
     if (type && transformers[type]) {
@@ -137,15 +141,25 @@ export function getCli() {
           describe: 'Optimizations used in compilation (0=off)',
           type: 'number',
           default: 200
+        })
+        .option('source', {
+          describe: 'Name of contract to read source from',
+          type: 'string'
+        })
+        .option('raw', {
+          alias: 'r',
+          describe: 'Args should be passed-through without transformation',
+          type: 'boolean',
+          default: false
         });
     }, (argv) => {
       const apiKey: string = <string>argv.apiKey; // required
       const contract: string = <string>argv.contract; // required
       const optimizations: number = <number>argv.optimizations; // required
       const [,...contractArgsRaw] = argv._;
-      const contractArgs = transformArgs(contractArgsRaw);
+      const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.verbose);
+      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.source, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

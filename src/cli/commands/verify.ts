@@ -135,8 +135,8 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   }
 }
 
-export async function verify(network: string, apiKey: string, contractName: string, contractArgs: any[], optimizations: number, verbose: number): Promise<void> {
-  info(`Verifying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
+export async function verify(network: string, apiKey: string, contractName: string, contractArgs: string | any[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
+  info(`Verifying contract ${contractName}${source ? ` from ${source}`: ""} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let saddle = await getSaddle(network);
 
@@ -144,11 +144,12 @@ export async function verify(network: string, apiKey: string, contractName: stri
   if (!contractAddress) {
     throw new Error(`Cannot find contract ${contractName}- was it deployed to ${network}?`);
   }
-  let contractBuild = await getContractBuild(contractName, saddle.saddle_config);
+  let contractSource = source || contractName;
+  let contractBuild = await getContractBuild(contractSource, saddle.saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
-  let constructorAbi = getConstructorABI(JSON.parse(contractBuild.abi), contractArgs);
+  let constructorAbi = Array.isArray(contractArgs) ? getConstructorABI(JSON.parse(contractBuild.abi), contractArgs) : contractArgs;
   let url = getEtherscanApiUrl(network);
 
   const verifyData: object = {

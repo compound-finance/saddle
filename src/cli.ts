@@ -6,7 +6,8 @@ import { startConsole } from './cli/commands/console';
 import { listContracts } from './cli/commands/contracts';
 import { loadContract } from './cli/commands/import';
 import { deploy } from './cli/commands/deploy';
-import { verify } from './cli/commands/verify';
+import { match } from './cli/commands/match';
+import { etherscanVerify } from './cli/commands/verify';
 import { init } from './cli/commands/init';
 import { test } from './cli/commands/test';
 export { getSaddle, Saddle } from './saddle';
@@ -20,7 +21,7 @@ function transformArgs(contractArgsRaw) {
   };
 
   return contractArgsRaw.map((arg) => {
-    let [raw, type] = arg.split(':', 2);
+    let [raw, type] = arg.toString().split(':', 2);
 
     if (!type) {
       if (Number.isInteger(arg)) {
@@ -106,6 +107,24 @@ export function getCli() {
 
       argv.deployResult = deploy(argv.network, contract, contractArgs, false, argv.verbose);
     })
+    .command('match <address> <contract>', 'Checks if a contract matches current build', (yargs) => {
+      return yargs
+        .positional('address', {
+          describe: 'Address of on-chain contract to match',
+          type: 'string'
+        }).positional('contract', {
+          describe: 'Contract to match (e.g. myContract.sol)',
+          type: 'string'
+        });
+    }, (argv) => {
+      const address: string = <string>argv.address; // required
+      const contract: string = <string>argv.contract; // required
+      const [,...contractArgsRaw] = argv._;
+      const contractArgs = transformArgs(contractArgsRaw);
+      console.log(address, contract, contractArgs);
+
+      argv.matchResult = match(argv.network, address, contract, contractArgs, false, argv.verbose);
+    })
     .command('import <address>', 'Imports a contract from remote source', (yargs) => {
       return yargs
         .positional('address', {
@@ -127,7 +146,7 @@ export function getCli() {
 
       loadContract(argv.source, argv.network, address, argv.outdir, argv.verbose);
     })
-    .command('verify <apiKey> <contract>', 'Deploy a contract to given network', (yargs) => {
+    .command('verify <apiKey> <contract>', 'Verify a given contract on Etherscan', (yargs) => {
       return yargs
         .positional('apiKey', {
           describe: 'API Key from Etherscan',
@@ -159,7 +178,7 @@ export function getCli() {
       const [,...contractArgsRaw] = argv._;
       const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      verify(argv.network, apiKey, contract, contractArgs, optimizations, argv.source, argv.verbose);
+      etherscanVerify(argv.network, apiKey, contract, contractArgs, optimizations, argv.source, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

@@ -160,6 +160,12 @@ Verifying a contract on [Etherscan](https://etherscan.io):
 npx saddle verify "{Etherscan API Key}" MyContract Arg0 Arg1 -n rinkeby
 ```
 
+Matching an on-chain contract matches your local contract's compilation:
+
+```bash
+npx saddle match 0x... MyContract Arg0 -n rinkeby
+```
+
 You can also start a saddle console:
 
 ```bash

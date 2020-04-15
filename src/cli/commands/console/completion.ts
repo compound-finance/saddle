@@ -51,13 +51,29 @@ function getCompleter(defaultCompleter, completions) {
 }
 
 export function getCompletions(defaultCompleter, contracts) {
+  let contractNames = Object.keys(contracts)
+  let contractAddresses = Object.values(contracts).filter((x) => !!x);
+
   const completions = [
     {
       initial: '.deploy',
       targets: [
         {
           pos: 1,
-          choices: Object.keys(contracts)
+          choices: contractNames
+        }
+      ]
+    },
+    {
+      initial: '.match',
+      targets: [
+        {
+          pos: 1,
+          choices: contractAddresses
+        },
+        {
+          pos: 2,
+          choices: contractNames
         }
       ]
     }

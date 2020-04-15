@@ -36,10 +36,12 @@ function allowUndefinedArgs(args: any[] | SendOptions, sendOptions?: SendOptions
   }
 }
 
-export async function getSaddle(network, trace=false): Promise<Saddle> {
+export async function getSaddle(network, trace=false, quiet=false): Promise<Saddle> {
   const saddle_config = await loadConfig(undefined, trace);
   const network_config = await instantiateConfig(saddle_config, network);
-  console.log(`Using network ${network} ${describeProvider(network_config.web3.currentProvider)}`);
+  if (!quiet) {
+    console.log(`Using network ${network} ${describeProvider(network_config.web3.currentProvider)}`);
+  }
 
   async function getContractInt(contractName: string, sendOptions?: SendOptions): Promise<Contract> {
     let options = {

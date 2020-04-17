@@ -27,7 +27,7 @@ async function wrapError(p, that) {
   }
 }
 
-async function getContracts(saddle) {
+export async function getContracts(saddle) {
   let contracts = await saddle.listContracts();
   let contractInsts = await Object.entries(contracts).reduce(async (acc, [contract, address]) => {
     if (address) {

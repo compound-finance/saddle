@@ -195,6 +195,29 @@ Available commands:
 
 You can recompile contracts in the repl by running `.compile`.
 
+## Scripts
+
+You can also run scripts from saddle. For instance, you can run:
+
+```bash
+npx saddle script myScript.js arg0 arg1
+```
+
+And then if you have a script such as:
+
+```javascript
+// my_script.js
+
+const [name, symbol] = args;
+
+async function() {
+  let contract = await saddle.deploy('MyContract', [name, symbol]);
+  console.log(`Deployed MyContract to ${contract.address}`);
+}();
+```
+
+This should open up the ability to create complex deployment scripts.
+
 ## Configuration
 
 Saddle comes with reasonable default configuration, but you can override it. The core of the configuration is a list of "sources" for any given configuration-item, allowing the framework to look at say an environment variable for a provider, or if that is missing, a file with the provider information, or if that is missing, use a default http endpoint. This would be described as:

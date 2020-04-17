@@ -58,72 +58,7 @@ async function checkStatus(url: string, token: string, verbose: number): Promise
   info(`Verification result ${result.result}...`, verbose);
 }
 
-const importRegex = /^[ \t]*import\s*\"([^\"]+)\"[\s;]*$\n?/mig;
-const pragmaRegex = /^[ \t]*(pragma[^;]+;)$\n?/mig;
-
-function matchAll(content, regex, index=1): string[] {
-  const results: string[] = [];
-  while (true) {
-    let match = regex.exec(content)
-    if (!match) {
-      break;
-    }
-    results.push(index ? match[index] : match);
-  }
-
-  return results;
-}
-
-function orderEntries(sources: {string: {content: string}}) {
-  const entries = Object.entries(sources);
-
-  const deps = entries.reduce((acc, [name, {content: content}]) => {
-    const entryDeps = matchAll(content, importRegex, 1)
-                        .map(file => path.join(path.dirname(name), file));
-    return {
-      ...acc,
-      [name]: entryDeps
-    };
-  }, {});
-
-  function addDeps(includedDeps: string[], totalDeps: object) {
-    if (Object.keys(totalDeps).length === 0) {
-      return includedDeps;
-    }
-
-    const originalLength = includedDeps.length;
-
-    Object.entries(totalDeps).forEach(([name, deps]) => {
-      const sat = deps.every((dep) => includedDeps.includes(dep));
-
-      if (sat) {
-        includedDeps.push(name);
-        delete totalDeps[name];
-      }
-    });
-
-    if (includedDeps.length === originalLength) {
-      throw new Error(`Cannot satisify dependency tree: included: ${JSON.stringify(includedDeps)}, total: ${JSON.stringify(totalDeps)}`);
-    }
-
-    return addDeps(includedDeps, totalDeps);
-  }
-
-  const order = addDeps([], deps);
-
-  return order.map((el) => [el, sources[el]]);
-}
-
-function flattenSources(sources: {string: {content: string}}, contractName: string): string {
-  const flattened = orderEntries(sources).reduce((acc, [name, {content: content}]) => {
-    return acc + content.replace(importRegex, '');
-  }, '');
-
-  const pragmas = matchAll(flattened, pragmaRegex, 1);
-  const pragmaHeader = [...new Set(pragmas)].join("\n");
-
-  return pragmaHeader + "\n" + flattened.replace(pragmaRegex, '');
-}
+const importRegex = /^\s*import\s*\"([^\"]+)\"[\s;]*$/mig;
 
 function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (string|string[])[]): string {
   const constructorAbi = abi.find((x) => x.type === 'constructor');
@@ -135,7 +70,7 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   }
 }
 
-export async function etherscanVerify(network: string, apiKey: string, contractName: string, contractArgs: string | any[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
+export async function etherscanVerify(network: string, apiKey: string, contractName: string, contractArgs: (string|string[])[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
   info(`Verifying contract ${contractName}${source ? ` from ${source}`: ""} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let saddle = await getSaddle(network);
@@ -147,27 +82,30 @@ export async function etherscanVerify(network: string, apiKey: string, contractN
   let contractSource = source || contractName;
   let contractBuild = await getContractBuild(contractSource, saddle.saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
-  let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
   let constructorAbi = Array.isArray(contractArgs) ? getConstructorABI(JSON.parse(contractBuild.abi), contractArgs) : contractArgs;
   let url = getEtherscanApiUrl(network);
+  let language = metadata.language;
+  let settings = metadata.settings;
+  let sources = metadata.sources;
+  let target = Object.entries(settings.compilationTarget)[0].join(':');
+  delete settings.compilationTarget;
 
   const verifyData: object = {
     apikey: apiKey,
     module: 'contract',
     action: 'verifysourcecode',
+    codeformat: 'solidity-standard-json-input',
     contractaddress: contractAddress,
-    sourceCode: sourceCode,
-    contractname: contractName,
+    sourceCode: JSON.stringify({language, settings, sources}),
+    contractname: target,
     compilerversion: `v${compilerVersion}`,
-    optimizationUsed: optimizations > 0 ? '1' : '0',
-    runs: optimizations > 0 ? optimizations.toString() : '',
     constructorArguements: constructorAbi.slice(2)
   };
 
   info(`Verifying ${contractName} at ${contractAddress} with compiler version ${compilerVersion}...`, verbose);
   debug(`Etherscan API Request:\n\n${JSON.stringify(verifyData, undefined, 2)}`, verbose);
-  debug(sourceCode, verbose);
+  debug(metadata.sources, verbose);
 
   // Potential results
   // {"status":"0","message":"NOTOK","result":"Invalid constructor arguments provided. Please verify that they are in ABI-encoded format"}

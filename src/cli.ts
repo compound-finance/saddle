@@ -115,13 +115,17 @@ export function getCli() {
         }).positional('contract', {
           describe: 'Contract to match (e.g. myContract.sol)',
           type: 'string'
+        }).option('raw', {
+          alias: 'r',
+          describe: 'Args should be passed-through without transformation',
+          type: 'boolean',
+          default: false
         });
     }, (argv) => {
       const address: string = <string>argv.address; // required
       const contract: string = <string>argv.contract; // required
       const [,...contractArgsRaw] = argv._;
-      const contractArgs = transformArgs(contractArgsRaw);
-      console.log(address, contract, contractArgs);
+      const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
       argv.matchResult = match(argv.network, address, contract, contractArgs, false, argv.verbose);
     })

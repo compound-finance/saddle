@@ -147,13 +147,25 @@ export async function deployContract(web3: Web3, network: string, name: string, 
   };
 }
 
-export async function contractDeployInfo(web3: Web3, network: string, name: string, args: any[], network_config: NetworkConfig, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<string> {
+function strip0x(str) {
+  if (str.slice(0,2) === "0x") {
+    return str.slice(2,);
+  } else {
+    return str;
+  }
+}
+
+export async function contractDeployInfo(web3: Web3, network: string, name: string, args: string | any[], network_config: NetworkConfig, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<string> {
   const contractBuild = await getContractBuild(name, network_config);
   const web3Contract = await getContract(web3, name, network_config, defaultOptions);
 
-  const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
+  if (Array.isArray(args)) {
+    const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
 
-  return deployer.encodeABI();
+    return deployer.encodeABI();
+  } else {
+    return '0x' + contractBuild.bin + strip0x(args);
+  }
 }
 
 export async function saveContract(name: string, contract: Contract, network_config: NetworkConfig): Promise<void> {

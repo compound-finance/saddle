@@ -16,6 +16,16 @@ function lowerCase(str) {
   }
 }
 
+async function wrapError(p, that) {
+  try {
+    return await p;
+  } catch (err) {
+    console.error(`Error: ${err}`);
+  } finally {
+    that.displayPrompt();
+  }
+}
+
 async function getContracts(saddle) {
   let contracts = await saddle.listContracts();
   let contractInsts = await Object.entries(contracts).reduce(async (acc, [contract, address]) => {
@@ -38,24 +48,60 @@ async function getContracts(saddle) {
 function defineCommands(r, saddle, network, contracts) {
   r.defineCommand('deploy', {
     help: 'Deploy a given contract',
-    action(name) {
+    action(...args) {
       this.clearBufferedCommand();
       let that = this;
 
-      getCli().parse(`deploy ${name}`, function (err, argv, output) {
+      getCli().parse(`deploy -n ${network} ${args.join(" ")}`, function (err, argv, output) {
         if (err) {
           console.error(`Error: ${err}`);
         } else {
           console.log(output);
-          argv.deployResult.then((res) => {
-            getContracts(saddle).then(({contracts, contractInsts}) => {
-              (<any>r).completer = getCompletions(r.originalCompleter, contracts);
-              defineContracts(r, saddle, contractInsts);
-              defineCommands(r, saddle, network, contracts);
+          wrapError(argv.deployResult, that).then((res) => {
+            if (res) {
+              getContracts(saddle).then(({contracts, contractInsts}) => {
+                (<any>r).completer = getCompletions(r.originalCompleter, contracts);
+                defineContracts(r, saddle, contractInsts);
+                defineCommands(r, saddle, network, contracts);
 
-              that.displayPrompt();
-            });
+                that.displayPrompt();
+              });
+            }
           });
+        }
+      });
+    }
+  });
+
+  r.defineCommand('verify', {
+    help: 'Verify a given contract on Etherscan',
+    action(...args) {
+      this.clearBufferedCommand();
+      let that = this;
+
+      getCli().parse(`verify -n ${network} ${args.join(" ")}`, function (err, argv, output) {
+        if (err) {
+          console.error(`Error: ${err}`);
+        } else {
+          console.log(output);
+          wrapError(argv.verifyResult, that);
+        }
+      });
+    }
+  });
+
+  r.defineCommand('match', {
+    help: 'Matches a given contract to an Ethereum deploy contract',
+    action(...args) {
+      this.clearBufferedCommand();
+      let that = this;
+
+      getCli().parse(`match -n ${network} ${args.join(" ")}`, function (err, argv, output) {
+        if (err) {
+          console.error(`Error: ${err}`);
+        } else {
+          console.log(output);
+          wrapError(argv.matchResult, that);
         }
       });
     }
@@ -72,14 +118,16 @@ function defineCommands(r, saddle, network, contracts) {
           console.error(`Error: ${err}`);
         } else {
           console.log(output);
-          argv.compileResult.then((res) => {
-            getContracts(saddle).then(({contracts, contractInsts}) => {
-              (<any>r).completer = getCompletions(r.originalCompleter, contracts);
-              defineContracts(r, saddle, contractInsts);
-              defineCommands(r, saddle, network, contracts);
+          wrapError(argv.compileResult, that).then((res) => {
+            if (res) {
+              getContracts(saddle).then(({contracts, contractInsts}) => {
+                (<any>r).completer = getCompletions(r.originalCompleter, contracts);
+                defineContracts(r, saddle, contractInsts);
+                defineCommands(r, saddle, network, contracts);
 
-              that.displayPrompt();
-            });
+                that.displayPrompt();
+              });
+            }
           });
         }
       });
@@ -97,9 +145,7 @@ function defineCommands(r, saddle, network, contracts) {
           console.error(`Error: ${err}`);
         } else {
           console.log(output);
-          argv.contractsResult.then((res) => {
-            that.displayPrompt();
-          });
+          wrapError(argv.contractsResult, that);
         }
       });
     }

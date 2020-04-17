@@ -9,7 +9,6 @@ import { describeProvider } from '../../utils';
 export async function deploy(network: string, contractName: string, contractArgs: any[], trace: boolean, verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {
   let saddle = await getSaddle(network);
 
-  info(`Using network ${network} ${describeProvider(saddle.web3.currentProvider)}`, verbose);
   info(`Deploying contract ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   const sendOptions = {

@@ -135,7 +135,7 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   }
 }
 
-export async function verify(network: string, apiKey: string, contractName: string, contractArgs: string | any[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
+export async function etherscanVerify(network: string, apiKey: string, contractName: string, contractArgs: string | any[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
   info(`Verifying contract ${contractName}${source ? ` from ${source}`: ""} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let saddle = await getSaddle(network);

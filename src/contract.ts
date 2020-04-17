@@ -147,6 +147,15 @@ export async function deployContract(web3: Web3, network: string, name: string, 
   };
 }
 
+export async function contractDeployInfo(web3: Web3, network: string, name: string, args: any[], network_config: NetworkConfig, defaultOptions: SendOptions, sendOptions: SendOptions): Promise<string> {
+  const contractBuild = await getContractBuild(name, network_config);
+  const web3Contract = await getContract(web3, name, network_config, defaultOptions);
+
+  const deployer = await web3Contract.deploy({ data: '0x' + contractBuild.bin, arguments: args });
+
+  return deployer.encodeABI();
+}
+
 export async function saveContract(name: string, contract: Contract, network_config: NetworkConfig): Promise<void> {
   let curr = await readNetworkFile(network_config);
 

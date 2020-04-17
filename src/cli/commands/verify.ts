@@ -135,17 +135,12 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   }
 }
 
-export async function etherscanVerify(network: string, apiKey: string, contractName: string, contractArgs: string | any[], optimizations: number, source: string | undefined, verbose: number): Promise<void> {
-  info(`Verifying contract ${contractName}${source ? ` from ${source}`: ""} with args ${JSON.stringify(contractArgs)}`, verbose);
+export async function etherscanVerify(network: string, apiKey: string, address: string, contractName: string, contractArgs: string | any[], optimizations: number, verbose: number): Promise<void> {
+  info(`Verifying contract ${contractName} at ${address} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let saddle = await getSaddle(network);
 
-  let contractAddress = await loadContractAddress(contractName, saddle.network_config);
-  if (!contractAddress) {
-    throw new Error(`Cannot find contract ${contractName}- was it deployed to ${network}?`);
-  }
-  let contractSource = source || contractName;
-  let contractBuild = await getContractBuild(contractSource, saddle.saddle_config);
+  let contractBuild = await getContractBuild(contractName, saddle.saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
   let sourceCode: string = await flattenSources(metadata.sources, contractName);
   let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
@@ -156,7 +151,7 @@ export async function etherscanVerify(network: string, apiKey: string, contractN
     apikey: apiKey,
     module: 'contract',
     action: 'verifysourcecode',
-    contractaddress: contractAddress,
+    contractaddress: address,
     sourceCode: sourceCode,
     contractname: contractName,
     compilerversion: `v${compilerVersion}`,
@@ -165,7 +160,7 @@ export async function etherscanVerify(network: string, apiKey: string, contractN
     constructorArguements: constructorAbi.slice(2)
   };
 
-  info(`Verifying ${contractName} at ${contractAddress} with compiler version ${compilerVersion}...`, verbose);
+  info(`Verifying ${contractName} at ${address} with compiler version ${compilerVersion}...`, verbose);
   debug(`Etherscan API Request:\n\n${JSON.stringify(verifyData, undefined, 2)}`, verbose);
   debug(sourceCode, verbose);
 

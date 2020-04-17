@@ -6,6 +6,7 @@ import { Contract, SendOptions } from 'web3-eth-contract';
 import { describeProvider } from './utils';
 import { TransactionReceipt } from 'web3-core';
 import { buildTracer, TraceOptions } from './trace';
+import { etherscanVerify } from './cli/commands/verify';
 
 export interface Saddle {
   account: string,
@@ -18,6 +19,7 @@ export interface Saddle {
   listContracts: () => Promise<{[contract: string]: string | null}>
   deploy: (contract: string, args: any[], sendOptions: any) => Promise<Contract>
   deployFull: (contract: string, args: any[], sendOptions: any, web3?: Web3 | undefined) => Promise<{contract: Contract, receipt: TransactionReceipt}>
+  verify: (apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], optimizations: number) => Promise<void>
   abi: (contract: string) => Promise<AbiItem[]>
   web3: Web3
   send: (contract: Contract, method: string, args: any[], sendOptions?: SendOptions) => Promise<any>
@@ -84,6 +86,11 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, network_config, network_config.defaultOptions, options);
   }
 
+  // TODO: Should this call into CLI code or maybe we should factor into a general util module?
+  async function verify(apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], optimizations: number): Promise<void> {
+    return etherscanVerify(network, apiKey, address, contractName, contractArgs, optimizations, 0);
+  }
+
   async function call(contract: Contract, method: string, args: any[] | SendOptions=[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
     [args, callOptions] = allowUndefinedArgs(args, callOptions);
 
@@ -117,6 +124,7 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     saddle_config: saddle_config,
     network_config: network_config,
     deploy: deploy,
+    verify: verify,
     deployFull: deployFull,
     abi: abi,
     web3: network_config.web3,

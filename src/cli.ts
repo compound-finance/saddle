@@ -162,10 +162,14 @@ export function getCli() {
 
       loadContract(argv.source, argv.network, address, argv.outdir, argv.verbose);
     })
-    .command('verify <apiKey> <contract>', 'Verify a given contract on Etherscan', (yargs) => {
+    .command('verify <apiKey> <address> <contract>', 'Verify a given contract on Etherscan', (yargs) => {
       return yargs
         .positional('apiKey', {
           describe: 'API Key from Etherscan',
+          type: 'string'
+        })
+        .positional('address', {
+          describe: 'Address of contract to verify',
           type: 'string'
         })
         .positional('contract', {
@@ -177,10 +181,6 @@ export function getCli() {
           type: 'number',
           default: 200
         })
-        .option('source', {
-          describe: 'Name of contract to read source from',
-          type: 'string'
-        })
         .option('raw', {
           alias: 'r',
           describe: 'Args should be passed-through without transformation',
@@ -189,12 +189,13 @@ export function getCli() {
         });
     }, (argv) => {
       const apiKey: string = <string>argv.apiKey; // required
+      const address: string = <string>argv.address; // required
       const contract: string = <string>argv.contract; // required
       const optimizations: number = <number>argv.optimizations; // required
       const [,...contractArgsRaw] = argv._;
       const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      etherscanVerify(argv.network, apiKey, contract, contractArgs, optimizations, argv.source, argv.verbose);
+      etherscanVerify(argv.network, apiKey, address, contract, contractArgs, optimizations, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

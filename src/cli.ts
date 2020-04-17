@@ -10,6 +10,7 @@ import { match } from './cli/commands/match';
 import { etherscanVerify } from './cli/commands/verify';
 import { init } from './cli/commands/init';
 import { test } from './cli/commands/test';
+import { runScript } from './cli/commands/script';
 export { getSaddle, Saddle } from './saddle';
 import { Readable, pipeline } from 'stream';
 import { createReadStream } from 'fs';
@@ -93,6 +94,17 @@ export function getCli() {
     })
     .command('contracts', 'Display given contracts', (yargs) => yargs, (argv) => {
       argv.contractsResult = listContracts(argv.network);
+    })
+    .command('script <script>', 'Run a given script', (yargs) => {
+      return yargs
+        .positional('script', {
+          describe: 'Script to run',
+          type: 'string'
+        });
+    }, (argv) => {
+      const script: string = <string>argv.script; // required
+
+      argv.scriptResult = runScript(argv.network, script, argv._.slice(1), argv.verbose);
     })
     .command('deploy <contract>', 'Deploy a contract to given network', (yargs) => {
       return yargs

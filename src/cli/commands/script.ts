@@ -26,7 +26,9 @@ export async function runScript(network: string, script: string, scriptArgs: any
     ...contractAddresses,
     console,
     network,
-    args: scriptArgs
+    args: scriptArgs,
+    env: process.env,
+    setTimeout
   };
 
   let scriptFile = saddle.saddle_config.scripts[script] || script; 

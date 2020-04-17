@@ -1,4 +1,5 @@
 import repl from 'repl';
+import path from 'path';
 import { getSaddle } from '../../saddle';
 import { getCli } from '../../cli';
 import { Contract } from 'web3-eth-contract';
@@ -219,6 +220,9 @@ export async function startConsole(input: Readable | undefined, network: string,
     output: input ? process.stdout : undefined,
     terminal: input ? false : undefined
   });
+  if (typeof(r.setupHistory) === 'function') {
+    r.setupHistory(path.join(process.cwd(), '.saddle_history'), (err, repl) => null);
+  }
   (<any>r).originalCompleter = r.completer;
   (<any>r).completer = getCompletions(r.completer, contracts);
 

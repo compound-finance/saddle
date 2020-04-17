@@ -6,7 +6,7 @@ import { describeProvider } from '../../utils';
 
 import { diffStringsUnified } from 'jest-diff';
 
-export async function match(network: string, address: string, contractName: string, contractArgs: any[], trace: boolean, verbose: number): Promise<void> {
+export async function match(network: string, address: string, contractName: string, contractArgs: string | any[], trace: boolean, verbose: number): Promise<void> {
   let saddle = await getSaddle(network);
 
   info(`Matching contract at ${address} to ${contractName} with args ${JSON.stringify(contractArgs)}`, verbose);

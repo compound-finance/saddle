@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",

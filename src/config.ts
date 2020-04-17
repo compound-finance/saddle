@@ -45,6 +45,7 @@ export interface SaddleConfig {
   contracts: string
   tests: string[]
   networks: {[network: string]: SaddleNetworkConfig}
+  scripts: {[name: string]: string}
   trace: boolean
   get_build_file?: () => string
   read_build_file?: () => Promise<object>

@@ -111,5 +111,6 @@ module.exports = {
         {file: "~/.ethereum/ropsten"}                   // Load from given file with contents as the private key (e.g. 0x...)
       ]
     }
-  }
+  },
+  scripts: {}                                           // Aliases for scripts
 }

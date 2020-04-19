@@ -1,7 +1,7 @@
 import { contractDeployInfo } from '../../contract';
 import { getSaddle } from '../../saddle';
 
-import { info, debug, warn, error } from '../logger';
+import { info, debug, warn, error } from '../../logger';
 import { describeProvider } from '../../utils';
 
 import { diffStringsUnified } from 'jest-diff';

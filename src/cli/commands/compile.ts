@@ -5,7 +5,7 @@ import { loadConfig } from '../../config';
 import { mkdirp, writeFile } from '../../file';
 import { getBuildFile } from '../../contract';
 
-import { info, debug, warn, error } from '../logger';
+import { info, debug, warn, error } from '../../logger';
 
 export async function compile(trace: boolean, verbose: number): Promise<void> {
   let config = await loadConfig(undefined, trace);

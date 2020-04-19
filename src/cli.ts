@@ -7,7 +7,7 @@ import { listContracts } from './cli/commands/contracts';
 import { loadContract } from './cli/commands/import';
 import { deploy } from './cli/commands/deploy';
 import { match } from './cli/commands/match';
-import { etherscanVerify } from './cli/commands/verify';
+import { verify } from './cli/commands/verify';
 import { init } from './cli/commands/init';
 import { test } from './cli/commands/test';
 import { runScript } from './cli/commands/script';
@@ -195,7 +195,7 @@ export function getCli() {
       const [,...contractArgsRaw] = argv._;
       const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      etherscanVerify(argv.network, apiKey, address, contract, contractArgs, optimizations, argv.verbose);
+      verify(argv.network, apiKey, address, contract, contractArgs, optimizations, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

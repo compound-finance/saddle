@@ -1,7 +1,7 @@
 import * as util from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Result, get, getEtherscanApiUrl, getEtherscanUrl } from './etherscan';
+import { Result, get, getEtherscanApiUrl, getEtherscanUrl } from '../../etherscan';
 
 export async function loadContract(source: string, network: string, address: string, outdir: string, verbose: number) {
   switch(source) {

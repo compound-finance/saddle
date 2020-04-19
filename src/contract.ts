@@ -57,9 +57,9 @@ export function getNetworkFile(network_config: NetworkConfig): string {
   }
 }
 
-export async function readNetworkFile(network_config: NetworkConfig): Promise<object> {
+export async function readNetworkFile(network_config: NetworkConfig): Promise<{[contract: string]: string | null}> {
   if (network_config.read_network_file) {
-    return await network_config.read_network_file(network_config.network);
+    return <{[contract: string]: string | null}>await network_config.read_network_file(network_config.network);
   } else {
     let networkFile = await getNetworkFile(network_config);
     return await readFile(networkFile, {}, JSON.parse);
@@ -179,5 +179,5 @@ export async function saveContract(name: string, contract: Contract, network_con
 export async function loadContractAddress(name: string, network_config: NetworkConfig): Promise<string | undefined> {
   let curr = await readNetworkFile(network_config);
 
-  return curr[name];
+  return curr[name] || undefined;
 }

@@ -1,12 +1,13 @@
 import Web3 from 'web3';
 import { loadConfig, instantiateConfig, NetworkConfig, SaddleConfig } from './config';
-import { deployContract, getContract, getContractABI, getContractAt, listContracts } from './contract';
+import { deployContract, getContract, getContractABI, getContractAt, listContracts, readNetworkFile } from './contract';
 import { AbiItem } from 'web3-utils';
 import { Contract, SendOptions } from 'web3-eth-contract';
 import { describeProvider } from './utils';
 import { TransactionReceipt } from 'web3-core';
 import { buildTracer, TraceOptions } from './trace';
-import { etherscanVerify } from './cli/commands/verify';
+import { etherscanVerify } from './verify';
+import { match } from './match';
 
 export interface Saddle {
   account: string,
@@ -16,10 +17,11 @@ export interface Saddle {
   network_config: NetworkConfig
   getContract: (contractName: string, sendOptions: SendOptions) => Promise<Contract>
   getContractAt: (contractName: string, address: string) => Promise<Contract>
-  listContracts: () => Promise<{[contract: string]: string | null}>
+  listContracts: (all?: boolean) => Promise<{[contract: string]: string | null}>
   deploy: (contract: string, args: any[], sendOptions: any) => Promise<Contract>
   deployFull: (contract: string, args: any[], sendOptions: any, web3?: Web3 | undefined) => Promise<{contract: Contract, receipt: TransactionReceipt}>
   verify: (apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], optimizations: number) => Promise<void>
+  match: (address: string, contractName: string, contractArgs: string | any[]) => Promise<void>
   abi: (contract: string) => Promise<AbiItem[]>
   web3: Web3
   send: (contract: Contract, method: string, args: any[], sendOptions?: SendOptions) => Promise<any>
@@ -58,8 +60,12 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     return await getContractAt(network_config.web3, contractName, network_config, address, network_config.defaultOptions);
   }
 
-  async function listContractsInt(): Promise<{[contract: string]: string | null}> {
-    return await listContracts(network_config);
+  async function listContractsInt(all=false): Promise<{[contract: string]: string | null}> {
+    if (all) {
+      return await readNetworkFile(network_config);
+    } else {
+      return await listContracts(network_config);
+    }
   }
 
   async function deploy(contractName: string, args: any[] | SendOptions=[], sendOptions?: SendOptions): Promise<Contract> {
@@ -86,9 +92,12 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, network_config, network_config.defaultOptions, options);
   }
 
-  // TODO: Should this call into CLI code or maybe we should factor into a general util module?
   async function verify(apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], optimizations: number): Promise<void> {
-    return etherscanVerify(network, apiKey, address, contractName, contractArgs, optimizations, 0);
+    return await etherscanVerify(saddle_config, network, apiKey, address, contractName, contractArgs, optimizations, 1);
+  }
+
+  async function matchInt(address: string, contractName: string, contractArgs: string | any[]): Promise<void> {
+    return await match(network_config, network_config.default_account, network_config.web3, address, contractName, contractArgs, false, 1);
   }
 
   async function call(contract: Contract, method: string, args: any[] | SendOptions=[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {
@@ -125,6 +134,7 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     network_config: network_config,
     deploy: deploy,
     verify: verify,
+    match: matchInt,
     deployFull: deployFull,
     abi: abi,
     web3: network_config.web3,

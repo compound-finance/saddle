@@ -1,4 +1,8 @@
 
+export function error(message: string, verbose: number) {
+  console.error(message);
+}
+
 export function warn(message: string, verbose: number) {
   console.log(message);
 }

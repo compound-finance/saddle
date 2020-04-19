@@ -4,7 +4,7 @@ import { getSaddle } from '../../saddle';
 import { getCli } from '../../cli';
 import { Contract } from 'web3-eth-contract';
 
-import { info, debug, warn, error } from '../logger';
+import { info, debug, warn, error } from '../../logger';
 import { describeProvider } from '../../utils';
 import { getCompletions } from './console/completion';
 import { Readable } from 'stream';

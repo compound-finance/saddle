@@ -3,7 +3,7 @@ import { TransactionReceipt } from 'web3-core';
 import { deployContract, getNetworkFile, saveContract } from '../../contract';
 import { getSaddle } from '../../saddle';
 
-import { info, debug, warn, error } from '../logger';
+import { info, debug, warn, error } from '../../logger';
 import { describeProvider } from '../../utils';
 
 export async function deploy(network: string, contractName: string, contractArgs: any[], trace: boolean, verbose: number): Promise<{contract: Contract, receipt: TransactionReceipt}> {

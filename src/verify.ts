@@ -26,7 +26,23 @@ async function sleep(timeout): Promise<void> {
   })
 }
 
-async function checkStatus(url: string, token: string, verbose: number): Promise<void> {
+// From https://etherscan.io/contract-license-types
+const licenses = {
+  NO_LICENSE: 1,
+  THE_UNLICENSE: 2,
+  MIT: 3,
+  GPLv2: 4,
+  GPLv3: 5,
+  LGLPv2_1: 6,
+  LGPLv3: 7,
+  BSD2: 8,
+  BSD3: 9,
+  MPL2: 10,
+  OSL3: 11,
+  APACHE2: 12
+};
+
+async function checkStatus(url: string, apiKey: string, token: string, verbose: number): Promise<void> {
   info(`Checking status of ${token}...`, verbose);
 
   // Potential results:
@@ -35,6 +51,7 @@ async function checkStatus(url: string, token: string, verbose: number): Promise
   // { status: '1', message: 'OK', result: 'Pass - Verified' }
 
   let result: Result = <Result>await get(url, {
+    apikey: apiKey,
     guid: token,
     module: "contract",
     action: "checkverifystatus"
@@ -44,7 +61,7 @@ async function checkStatus(url: string, token: string, verbose: number): Promise
 
   if (result.result === "Pending in queue") {
     await sleep(5000);
-    return await checkStatus(url, token, verbose);
+    return await checkStatus(url, apiKey, token, verbose);
   }
 
   if (result.result.startsWith('Fail')) {
@@ -75,7 +92,7 @@ export async function etherscanVerify(saddle_config: SaddleConfig, network: stri
 
   let contractBuild = await getContractBuild(contractName, saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
-  let compilerVersion: string = contractBuild.version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
+  let compilerVersion: string = contractBuild.version.replace(/\+commit\.([0-9a-fA-F]+)\..*/gi, '+commit.$1');
   let constructorAbi = Array.isArray(contractArgs) ? getConstructorABI(JSON.parse(contractBuild.abi), contractArgs) : contractArgs;
   let url = getEtherscanApiUrl(network);
   let language = metadata.language;
@@ -93,7 +110,8 @@ export async function etherscanVerify(saddle_config: SaddleConfig, network: stri
     sourceCode: JSON.stringify({language, settings, sources}),
     contractname: target,
     compilerversion: `v${compilerVersion}`,
-    constructorArguements: constructorAbi.slice(2)
+    constructorArguements: constructorAbi.slice(2),
+    licenseType: licenses.NO_LICENSE.toString()
   };
 
   info(`Verifying ${contractName} at ${address} with compiler version ${compilerVersion}...`, verbose);
@@ -113,6 +131,6 @@ export async function etherscanVerify(saddle_config: SaddleConfig, network: stri
       throw new Error(`Etherscan Error: ${result.message}: ${result.result}`)
     }
   } else {
-    return await checkStatus(url, result.result, verbose);
+    return await checkStatus(url, apiKey, result.result, verbose);
   }
 }

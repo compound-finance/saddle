@@ -37,8 +37,8 @@ Let's assume you define a simple Ethereum contract:
 
 `contracts/MyContract.sol`
 
-```javascript
-pragma solidity ^0.5.12;
+```solidity
+pragma solidity ^0.5.16;
 
 contract MyContract {
 	function myFunc() pure external returns (uint256) {

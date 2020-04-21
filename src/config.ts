@@ -3,7 +3,7 @@ import { SendOptions } from 'web3-eth-contract';
 import path from 'path';
 import ganache from 'ganache-core';
 import {arr, mergeDeep, tryNumber, readFile} from './utils';
-import { debug } from './cli/logger';
+import { debug } from './logger';
 import ProviderEngine from 'web3-provider-engine';
 import { CoverageSubprovider } from '@compound-finance/sol-coverage';
 import { GanacheSubprovider } from './ganache_subprovider';

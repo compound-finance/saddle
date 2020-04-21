@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import util from 'util';
 
-import {info, debug, warn, error} from '../logger';
+import {info, debug, warn, error} from '../../logger';
 
 export async function init(verbose: number): Promise<void> {
   info(`Saddle: building default configuration...\n`, verbose);

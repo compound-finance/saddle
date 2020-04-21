@@ -18,15 +18,19 @@ import { createReadStream } from 'fs';
 function transformArgs(contractArgsRaw) {
   const transformers = {
     array: (arg) => arg.split(',').filter(x => x.length > 0),
-    address: (arg) => arg.toString()
+    address: (arg) => arg.toString(),
+    struct: (arg) => JSON.parse(arg)
   };
 
   return contractArgsRaw.map((arg) => {
-    let [raw, type] = arg.toString().split(':', 2);
-
+    // Split based on the last occurance of ':', very import for struct type
+    let [raw, type] = arg.toString().split(/\:(?=[^\:]+$)/)
+    
     if (!type) {
       if (Number.isInteger(arg)) {
         type = 'number';
+      } else if (arg.includes('{') && arg.includes('}')) {
+        type = 'struct';
       } else if (arg.includes(',')) {
         type = 'array';
       }

@@ -92,12 +92,12 @@ export async function getSaddle(network, trace=false, quiet=false): Promise<Sadd
     return await deployContract(web3 || network_config.web3, network_config.network, contractName, args, network_config, network_config.defaultOptions, options);
   }
 
-  async function verify(apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], optimizations: number): Promise<void> {
-    return await etherscanVerify(saddle_config, network, apiKey, address, contractName, contractArgs, optimizations, 1);
+  async function verify(apiKey: string, address: string, contractName: string, contractArgs: (string | string[])[], verbose=0): Promise<void> {
+    return await etherscanVerify(saddle_config, network, apiKey, address, contractName, contractArgs, verbose);
   }
 
-  async function matchInt(address: string, contractName: string, contractArgs: string | any[]): Promise<void> {
-    return await match(network_config, network_config.default_account, network_config.web3, address, contractName, contractArgs, false, 1);
+  async function matchInt(address: string, contractName: string, contractArgs: string | any[], verbose=0): Promise<void> {
+    return await match(network_config, network_config.default_account, network_config.web3, address, contractName, contractArgs, false, 0);
   }
 
   async function call(contract: Contract, method: string, args: any[] | SendOptions=[], callOptions?: SendOptions, blockNumber?: number): Promise<any> {

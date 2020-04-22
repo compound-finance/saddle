@@ -180,11 +180,6 @@ export function getCli() {
           describe: 'Contract to deploy (e.g. myContract.sol)',
           type: 'string'
         })
-        .option('optimizations', {
-          describe: 'Optimizations used in compilation (0=off)',
-          type: 'number',
-          default: 200
-        })
         .option('raw', {
           alias: 'r',
           describe: 'Args should be passed-through without transformation',
@@ -195,11 +190,10 @@ export function getCli() {
       const apiKey: string = <string>argv.apiKey; // required
       const address: string = <string>argv.address; // required
       const contract: string = <string>argv.contract; // required
-      const optimizations: number = <number>argv.optimizations; // required
       const [,...contractArgsRaw] = argv._;
       const contractArgs = argv.raw ? argv._[1] : transformArgs(contractArgsRaw);
 
-      verify(argv.network, apiKey, address, contract, contractArgs, optimizations, argv.verbose);
+      verify(argv.network, apiKey, address, contract, contractArgs, argv.verbose);
     })
     .command('test', 'Run contract tests', (yargs) => yargs, (argv) => {
       test(argv, false, argv.verbose);

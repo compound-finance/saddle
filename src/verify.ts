@@ -87,7 +87,7 @@ function getConstructorABI(abi: {type: string, inputs: any[]}[], contractArgs: (
   }
 }
 
-export async function etherscanVerify(saddle_config: SaddleConfig, network: string, apiKey: string, address: string, contractName: string, contractArgs: (string|string[])[], optimizations: number, verbose: number): Promise<void> {
+export async function etherscanVerify(saddle_config: SaddleConfig, network: string, apiKey: string, address: string, contractName: string, contractArgs: (string|string[])[], verbose: number): Promise<void> {
   info(`Verifying contract ${contractName} at ${address} with args ${JSON.stringify(contractArgs)}`, verbose);
 
   let contractBuild = await getContractBuild(contractName, saddle_config);

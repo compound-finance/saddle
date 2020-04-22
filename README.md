@@ -229,6 +229,24 @@ provider: [{env: "PROVIDER"}, {file: "~/.ethereum-provider"}, {http: "http://rin
 
 To set your own configuration, simply run: `saddle init` and this will create a file `saddle.config.js`. Make any changes to the configuration you need in that file
 
+## How to build and use saddle package locally 
+1. Building and linking saddle package for local usage: 
+```bash
+yarn install
+yarn prepare 
+yarn link
+```
+
+2. Linking locally built saddle package inside the project where you want to use it: 
+```bash
+yarn link "eth-saddle"
+```
+
+3. To reverse linking process, simply use:
+```bash 
+yarn unlink "eth-saddle"
+```
+
 ## Contributing
 
 Please create an issue for any questions. In the interest of keeping saddle as simple as possible, we will not try to mimic all features of more complex frameworks-- so it's better to discuss first before submitting PRs.

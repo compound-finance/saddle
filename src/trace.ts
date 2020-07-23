@@ -1,5 +1,5 @@
 import { NetworkConfig } from './config';
-import { TraceCollector, parseSourceMap } from '@0x/sol-tracing-utils';
+import { TraceCollector, parseSourceMap } from '@compound-finance/sol-tracing-utils';
 import { TransactionReceipt } from 'web3-core';
 import { stripHexPrefix } from 'ethereumjs-util';
 import chalk from 'chalk';

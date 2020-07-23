@@ -7,7 +7,7 @@ import { getBuildFile } from '../../contract';
 
 import { info, debug, warn, error } from '../../logger';
 
-export async function compile(trace: boolean, verbose: number): Promise<void> {
+export async function compile(trace: boolean, verbose: number, pretty: boolean): Promise<void> {
   let config = await loadConfig(undefined, trace);
 
   let outFile = getBuildFile(config);
@@ -30,7 +30,10 @@ export async function compile(trace: boolean, verbose: number): Promise<void> {
     error(stderr, verbose);
   }
 
-  await writeFile(outFile, stdout);
+  let formattedOut =
+    pretty ? JSON.stringify(JSON.parse(stdout), null, 2) : stdout;
+
+  await writeFile(outFile, formattedOut);
 
   info(`Contracts compiled successfully.`, verbose);
 }

@@ -55,9 +55,14 @@ export function getCli() {
           describe: 'Build contracts with detailed debug information',
           type: 'boolean',
           default: false
+        })
+        .option('pretty', {
+          describe: 'Pretty format the JSON',
+          type: 'boolean',
+          default: true
         });
     }, (argv) => {
-      argv.compileResult = compile(argv.trace, argv.verbose);
+      argv.compileResult = compile(argv.trace, argv.verbose, argv.pretty);
     })
     .command('console', 'Starts a saddle console', (yargs) => {
       return yargs

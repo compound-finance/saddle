@@ -19,6 +19,7 @@ export default class CustomEnvironment extends NodeEnvironment {
     let start = new Date();
     let saddle = await getSaddle('test', this.coverage);
     this.global['saddle'] = saddle;
+    this.global['coverage'] = this.coverage;
     this.global['web3'] = saddle.web3;
     this.global['call'] = saddle.call;
     this.global['send'] = saddle.send;
@@ -38,6 +39,7 @@ export default class CustomEnvironment extends NodeEnvironment {
       await writeCoverage(this.global['saddle'].saddle_config, this.testName, coverage);
     }
     delete this.global['saddle'];
+    delete this.global['coverage'];
     delete this.global['web3'];
     delete this.global['call'];
     delete this.global['send'];

@@ -75,3 +75,12 @@ export function describeProvider(provider): string {
     return provider.engine ? provider.engine.constructor.name : 'unknown provider';
   }
 }
+
+export function isValidJSONString(str) {
+  try {
+      JSON.parse(str);
+  } catch (e) {
+      return false;
+  }
+  return true;
+}

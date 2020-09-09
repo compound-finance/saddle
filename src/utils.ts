@@ -78,9 +78,12 @@ export function describeProvider(provider): string {
 
 export function isValidJSONString(str) {
   try {
-      JSON.parse(str);
+    let res = JSON.parse(str);
+
+    return typeof(res) !== 'number';
   } catch (e) {
-      return false;
+    return false;
   }
+
   return true;
 }

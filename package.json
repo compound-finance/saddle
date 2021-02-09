@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -12,14 +12,14 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "@0x/subproviders": "^6.0.0",
-    "@compound-finance/sol-coverage": "^4.0.10-alpha.7",
-    "@compound-finance/sol-tracing-utils": "7.1.0-alpha.7",
+    "@0x/subproviders": "=6.0.0",
+    "@compound-finance/sol-coverage": "=4.0.10-alpha.7",
+    "@compound-finance/sol-tracing-utils": "=7.1.0-alpha.7",
     "@types/jest": "^24.0.15",
     "ethereumjs-tx": "2.1.2",
     "ethereumjs-util": "5.2.0",
     "fast-glob": "^3.2.2",
-    "ganache-core": "^2.10.2",
+    "ganache-core": "^2.13.2",
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
     "jest-diff": "^25.3.0",
@@ -36,5 +36,8 @@
   },
   "bin": {
     "saddle": "dist/cli.js"
+  },
+  "resolutions": {
+    "**/solidity-parser-antlr": "^0.4.11"
   }
 }

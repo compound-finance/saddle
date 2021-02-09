@@ -117,8 +117,8 @@ export async function getContractABI(name: string, saddle_config: SaddleConfig |
 
 export async function getContract(web3: Web3, name: string, saddle_config: SaddleConfig | NetworkConfig, defaultOptions: SendOptions): Promise<Contract> {
   const contractBuild = await getContractBuild(name, saddle_config);
-  const contractAbi = JSON.parse(contractBuild.abi);
-  return new web3.eth.Contract(contractAbi, undefined, defaultOptions);;
+  const contractAbi: any = typeof(contractBuild.abi) === 'string' ? JSON.parse(contractBuild.abi) : contractBuild.abi;
+  return <any>(new web3.eth.Contract(contractAbi, undefined, defaultOptions));
 }
 
 export async function getContractAt(web3: Web3, name: string, saddle_config: SaddleConfig | NetworkConfig, address: string, defaultOptions: SendOptions): Promise<Contract> {

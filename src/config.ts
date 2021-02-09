@@ -185,6 +185,7 @@ async function fetchWeb3(providers: ProviderSource[], accountSource: AccountSour
         return config;
       }
     }, {});
+    console.log({CoverageSubprovider});
     coverageSubprovider = new CoverageSubprovider(artifactAdapter, '0x');
     const blockTracker = {
       on: () => null,

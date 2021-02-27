@@ -93,11 +93,15 @@ export async function etherscanVerify(saddle_config: SaddleConfig, network: stri
   let contractBuild = await getContractBuild(contractName, saddle_config);
   let metadata = JSON.parse((<any>contractBuild).metadata);
   let compilerVersion: string = contractBuild.version.replace(/\+commit\.([0-9a-fA-F]+)\..*/gi, '+commit.$1');
-  let constructorAbi = Array.isArray(contractArgs) ? getConstructorABI(JSON.parse(contractBuild.abi), contractArgs) : contractArgs;
+  let constructorAbi = Array.isArray(contractArgs) ? getConstructorABI(typeof(contractBuild.abi) === 'string' ? JSON.parse(contractBuild.abi) : contractBuild.abi, contractArgs) : contractArgs;
   let url = getEtherscanApiUrl(network);
   let language = metadata.language;
   let settings = metadata.settings;
-  let sources = metadata.sources;
+  let sources = Object.fromEntries(Object.entries(metadata.sources).map(([contract, data]) => {
+    let {license, ...rest} = <any>data; // Remove license key
+
+    return [contract, rest];
+  }));
   let target = Object.entries(settings.compilationTarget)[0].join(':');
   delete settings.compilationTarget;
 

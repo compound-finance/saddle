@@ -217,5 +217,8 @@ export function getCli() {
 }
 
 if (require.main === module) {
+  yargs.parserConfiguration({
+    "unknown-options-as-args": true
+  })
   getCli().parse();
 }

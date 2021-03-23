@@ -1,6 +1,6 @@
 import NodeEnvironment from 'jest-environment-node';
 import expect from 'expect';
-import {getSaddle} from './saddle';
+import {Saddle, getSaddle} from './saddle';
 import {writeCoverage} from './coverage';
 import * as path from 'path';
 
@@ -34,9 +34,9 @@ export default class CustomEnvironment extends NodeEnvironment {
   async teardown() {
     let start = new Date();
     if (this.coverage) {
-      await this.global['saddle'].network_config.providerEngine.stop();
-      let coverage = this.global['saddle'].network_config.cov._coverageCollector._collector.getFinalCoverage();
-      await writeCoverage(this.global['saddle'].saddle_config, this.testName, coverage);
+      await (<any>this.global['saddle']).network_config.providerEngine.stop();
+      let coverage = (<any>this.global['saddle']).network_config.cov._coverageCollector._collector.getFinalCoverage();
+      await writeCoverage((<any>this.global['saddle']).saddle_config, this.testName, coverage);
     }
     delete this.global['saddle'];
     delete this.global['coverage'];
@@ -52,6 +52,6 @@ export default class CustomEnvironment extends NodeEnvironment {
   }
 
   runScript(script) {
-    return super.runScript(script);
+    return <any>super.runScript(script);
   }
 }

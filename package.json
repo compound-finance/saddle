@@ -1,6 +1,6 @@
 {
   "name": "eth-saddle",
-  "version": "0.1.23",
+  "version": "0.1.24-alpha1",
   "description": "Ethereum Smart Contract Saddle",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -15,20 +15,19 @@
     "@0x/subproviders": "=6.0.0",
     "@compound-finance/sol-coverage": "=4.0.10-alpha.7",
     "@compound-finance/sol-tracing-utils": "=7.1.0-alpha.7",
-    "@types/jest": "^24.0.15",
+    "@types/jest": "^26.0.21",
     "ethereumjs-tx": "2.1.2",
-    "ethereumjs-util": "5.2.0",
-    "fast-glob": "^3.2.2",
+    "ethereumjs-util": "7.0.9",
+    "fast-glob": "^3.2.5",
     "ganache-core": "^2.13.2",
-    "jest": "^24.9.0",
-    "jest-cli": "^24.9.0",
-    "jest-diff": "^25.3.0",
-    "jest-junit": "^6.4.0",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.5.1",
-    "web3": "^1.2.11",
-    "web3-provider-engine": "^15.0.4",
-    "yargs": "^13.2.4"
+    "jest": "^26.6.3",
+    "jest-cli": "^26.6.3",
+    "jest-diff": "^26.6.2",
+    "jest-junit": "^12.0.0",
+    "ts-jest": "^26.5.4",
+    "typescript": "^4.2.3",
+    "web3": "^1.3.4",
+    "yargs": "^16.2.0"
   },
   "scripts": {
     "test": "jest",
@@ -36,8 +35,5 @@
   },
   "bin": {
     "saddle": "dist/cli.js"
-  },
-  "resolutions": {
-    "**/solidity-parser-antlr": "^0.4.11"
   }
 }

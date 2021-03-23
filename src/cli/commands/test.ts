@@ -1,7 +1,7 @@
 import yargs from 'yargs';
 import cli from 'jest-cli';
 import {buildArgv} from 'jest-cli/build/cli';
-import jest from 'jest';
+import * as jest from 'jest';
 import path from 'path';
 import {loadConfig} from '../../config';
 
@@ -18,12 +18,13 @@ export async function test(argv: yargs.Arguments, coverage: boolean, verbose: nu
   }
 
   // Parse command line args, possibly override testMatch based on remaining argv
-  const jestArgv = buildArgv(argv._);
+  const jestArgv = buildArgv(argv._.map((x) => x.toString()));
   const testArgs = argv._[0] == 'test' ? argv._.slice(1) : argv._;
   const testPats = testArgs.map(a => `**/${a}`);
 
   info(`Jest args: ${JSON.stringify(jestArgv)}`, verbose);
 
+  console.log({jest});
   const res = await jest.runCLI({
     testMatch: testPats.length ? testPats : config.tests,
     testEnvironment: path.join(__dirname, '..', '..', 'test_env.js'),

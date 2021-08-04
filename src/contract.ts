@@ -112,12 +112,11 @@ export async function listContracts(network_config: NetworkConfig): Promise<{[co
 
 export async function getContractABI(name: string, saddle_config: SaddleConfig | NetworkConfig): Promise<AbiItem[]> {
   const contractBuild = await getContractBuild(name, saddle_config);
-  return JSON.parse(contractBuild.abi);
+  return typeof(contractBuild.abi) === 'string' ? JSON.parse(contractBuild.abi) : contractBuild.abi;
 }
 
 export async function getContract(web3: Web3, name: string, saddle_config: SaddleConfig | NetworkConfig, defaultOptions: SendOptions): Promise<Contract> {
-  const contractBuild = await getContractBuild(name, saddle_config);
-  const contractAbi: any = typeof(contractBuild.abi) === 'string' ? JSON.parse(contractBuild.abi) : contractBuild.abi;
+  const contractAbi = await getContractABI(name, saddle_config);
   return <any>(new web3.eth.Contract(contractAbi, undefined, defaultOptions));
 }
 
